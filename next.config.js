@@ -27,6 +27,11 @@ const nextConfig = {
     // Disable TypeScript type checking during build
     ignoreBuildErrors: true,
   },
+  // Ensure SWC compiler is used - required for next/font
+  swcMinify: true,
+  compiler: {
+    styledComponents: true,
+  },
   // Suppress warnings that aren't critical
   onDemandEntries: {
     maxInactiveAge: 60 * 60 * 1000, // 1 hour
