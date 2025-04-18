@@ -1,7 +1,7 @@
-import { initializeApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 // Provide fallback values to prevent errors during development or when environment variables are missing
 const firebaseConfig = {
@@ -16,32 +16,60 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef",
 };
 
-// Initialize Firebase only if we're in a browser environment
-let app;
-let auth;
-let db;
-let storage;
+// Define a class to ensure Firebase is initialized only once
+class FirebaseClient {
+  private static instance: FirebaseClient;
+  private app: FirebaseApp | null = null;
+  private _auth: Auth | null = null;
+  private _db: Firestore | null = null;
+  private _storage: FirebaseStorage | null = null;
 
-if (typeof window !== "undefined") {
-  try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-    auth = getAuth(app);
-    db = getFirestore(app);
-    storage = getStorage(app);
-  } catch (error) {
-    console.error("Firebase initialization error:", error);
-    // Provide fallback objects to prevent crashes
-    app = null;
-    auth = null;
-    db = null;
-    storage = null;
+  constructor() {
+    if (typeof window !== "undefined") {
+      try {
+        if (!getApps().length) {
+          this.app = initializeApp(firebaseConfig);
+        } else {
+          this.app = getApps()[0];
+        }
+        this._auth = getAuth(this.app);
+        this._db = getFirestore(this.app);
+        this._storage = getStorage(this.app);
+      } catch (error) {
+        console.error("Firebase initialization error:", error);
+        // Fallbacks remain null
+      }
+    }
   }
-} else {
-  // Server environment - create placeholder objects
-  app = null;
-  auth = null;
-  db = null;
-  storage = null;
+
+  public static getInstance(): FirebaseClient {
+    if (!FirebaseClient.instance) {
+      FirebaseClient.instance = new FirebaseClient();
+    }
+    return FirebaseClient.instance;
+  }
+
+  get auth() {
+    return this._auth;
+  }
+
+  get db() {
+    return this._db;
+  }
+
+  get storage() {
+    return this._storage;
+  }
 }
 
-export { app, auth, db, storage };
+// Only initialize client-side
+let firebase: FirebaseClient;
+
+if (typeof window !== "undefined") {
+  firebase = FirebaseClient.getInstance();
+}
+
+export const app = typeof window !== "undefined" ? firebase?.app : null;
+export const auth = typeof window !== "undefined" ? firebase?.auth : null;
+export const db = typeof window !== "undefined" ? firebase?.db : null;
+export const storage = typeof window !== "undefined" ? firebase?.storage : null;

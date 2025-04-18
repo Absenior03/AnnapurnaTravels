@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FiMail, FiLock, FiUser, FiLogIn } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { useAuth } from "../../../context/AuthContext";
-import Navbar from "../../../components/Navbar";
-import Footer from "../../../components/Footer";
+import { useAuth } from "@/context/AuthContext";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function Login() {
   const [email, setEmail] = useState("");

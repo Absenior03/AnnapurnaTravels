@@ -22,30 +22,29 @@ interface AuthContextProps {
   isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthContextProps | undefined>(undefined);
-
-// Default AuthContext implementation for when Firebase is not available
-const defaultAuthContext: AuthContextProps = {
+// Create the context with a default value to avoid undefined errors
+const AuthContext = createContext<AuthContextProps>({
   user: null,
-  loading: false,
+  loading: true,
   signIn: async () => {
-    console.log("Firebase auth not initialized - sign in unavailable");
+    console.warn("Auth context not yet initialized");
   },
   signUp: async () => {
-    console.log("Firebase auth not initialized - sign up unavailable");
+    console.warn("Auth context not yet initialized");
   },
   logout: async () => {
-    console.log("Firebase auth not initialized - logout unavailable");
+    console.warn("Auth context not yet initialized");
   },
   isAdmin: false,
-};
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if Firebase auth is available
-  const isFirebaseAvailable = auth !== null && db !== null;
+  // Check if Firebase auth is available (client-side only)
+  const isFirebaseAvailable =
+    typeof window !== "undefined" && auth !== null && db !== null;
 
   // Update isAdmin check to look for role === 'admin' instead of just email
   const isAdmin =
@@ -106,16 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, [isFirebaseAvailable]);
 
-  // If Firebase is not available, return a demo context
-  if (!isFirebaseAvailable) {
-    return (
-      <AuthContext.Provider value={defaultAuthContext}>
-        {children}
-      </AuthContext.Provider>
-    );
-  }
-
+  // Sign in function
   const signIn = async (email: string, password: string) => {
+    if (!isFirebaseAvailable || !auth) {
+      console.error("Firebase auth not available");
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -123,7 +119,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Sign up function
   const signUp = async (email: string, password: string, name: string) => {
+    if (!isFirebaseAvailable || !auth || !db) {
+      console.error("Firebase not available");
+      return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -148,7 +150,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Logout function
   const logout = async () => {
+    if (!isFirebaseAvailable || !auth) {
+      console.error("Firebase auth not available");
+      return;
+    }
+
     try {
       await signOut(auth);
     } catch (error) {
@@ -156,18 +164,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const contextValue = {
+    user,
+    loading,
+    signIn,
+    signUp,
+    logout,
+    isAdmin,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{ user, loading, signIn, signUp, logout, isAdmin }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 }
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
