@@ -3,9 +3,6 @@
   "devCommand": "next dev",
   "installCommand": "npm install",
   "framework": "nextjs",
-  "buildOptions": {
-    "ignoreESLint": true
-  },
   "env": {
     "DISABLE_ESLINT_PLUGIN": "true",
     "NEXT_DISABLE_ESLINT": "1"
