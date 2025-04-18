@@ -1,5 +1,5 @@
 {
   "name": "annapurna-tours-and-travels",
-  "buildCommand": "./build.sh",
+  "buildCommand": "./deploy.sh",
   "outputDirectory": ".next"
 } 

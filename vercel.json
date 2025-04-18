@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "./build.sh",
+  "buildCommand": "./deploy.sh",
   "devCommand": "next dev",
-  "installCommand": "npm install && chmod +x build.sh",
+  "installCommand": "npm install && chmod +x deploy.sh",
   "framework": null,
   "env": {
     "DISABLE_ESLINT_PLUGIN": "true",
