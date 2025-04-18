@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.pexels.com', 'randomuser.me'],
+    domains: ["images.pexels.com", "randomuser.me"],
   },
-  // Uncomment the following line if you want to use Stripe
-  // transpilePackages: ['@stripe/react-stripe-js'],
+  transpilePackages: ["undici", "firebase"],
+  experimental: {
+    swcPlugins: [["next-superjson-plugin", {}]],
+  },
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
@@ -15,6 +17,6 @@ const nextConfig = {
     // your project has type errors.
     ignoreBuildErrors: true,
   },
-}
+};
 
-module.exports = nextConfig 
+module.exports = nextConfig;
