@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Libre_Baskerville } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "@/context/AuthContext";
 import FirebaseNotice from "@/components/FirebaseNotice";
+import PexelsNotice from "@/components/PexelsNotice";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -43,6 +44,7 @@ export default function RootLayout({
           {children}
           <ToastContainer position="top-right" />
           <FirebaseNotice />
+          <PexelsNotice />
         </AuthProvider>
       </body>
     </html>
