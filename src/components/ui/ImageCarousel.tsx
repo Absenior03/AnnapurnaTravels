@@ -36,7 +36,7 @@ export default function ImageCarousel({
 
     const intervalId = setInterval(goToNext, autoSlideInterval);
     return () => clearInterval(intervalId);
-  }, [autoSlideInterval, images.length]);
+  }, [autoSlideInterval, images.length, goToNext]);
 
   if (!images.length) {
     return (

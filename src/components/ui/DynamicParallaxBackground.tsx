@@ -1,11 +1,32 @@
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
-// Maximum number of parallax layers we'll support
-// This ensures we always call the same number of hooks
+// Maximum number of parallax layers we support
 const MAX_PARALLAX_LAYERS = 5;
+
+// Create transform functions outside component
+function createLayerTransforms(scrollYProgress: any, index: number, speed: number) {
+  return {
+    y: useTransform(
+      scrollYProgress, 
+      [0, 1], 
+      [0, speed * 100]
+    ),
+    scale: useTransform(
+      scrollYProgress,
+      [0, 0.5, 1],
+      [1 + (index * 0.05), 1 + (index * 0.08), 1 + (index * 0.05)]
+    ),
+    opacity: useTransform(
+      scrollYProgress,
+      [0, 0.5, 1],
+      [1, 0.95 - (index * 0.05), 0.9 - (index * 0.1)]
+    ),
+    blurValue: index > 0 ? `blur(${index * 1.5}px)` : 'none'
+  };
+}
 
 interface DynamicParallaxBackgroundProps {
   children?: React.ReactNode;
@@ -46,29 +67,10 @@ export default function DynamicParallaxBackground({
   const contentY = useTransform(scrollYProgress, [0, 1], [0, 50]);
   const contentOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.6]);
   
-  // Create a fixed number of transform functions
-  // This ensures we always call the same number of hooks regardless of parallaxImages length
+  // Pre-calculate transforms for the maximum number of layers we support
   const layerTransforms = Array.from({ length: MAX_PARALLAX_LAYERS }).map((_, index) => {
     const speed = parallaxImages[index]?.speed || 0.2 + (index * 0.1);
-    
-    return {
-      y: useTransform(
-        scrollYProgress, 
-        [0, 1], 
-        [0, speed * 100]
-      ),
-      scale: useTransform(
-        scrollYProgress,
-        [0, 0.5, 1],
-        [1 + (index * 0.05), 1 + (index * 0.08), 1 + (index * 0.05)]
-      ),
-      opacity: useTransform(
-        scrollYProgress,
-        [0, 0.5, 1],
-        [1, 0.95 - (index * 0.05), 0.9 - (index * 0.1)]
-      ),
-      blurValue: index > 0 ? `blur(${index * 1.5}px)` : 'none'
-    };
+    return createLayerTransforms(scrollYProgress, index, speed);
   });
 
   // Update dimensions on resize

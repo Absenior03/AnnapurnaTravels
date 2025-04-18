@@ -3,6 +3,29 @@
 import { useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
+// Helper function to create layer transforms outside the component render function
+function createLayerTransforms(scrollYProgress: any, index: number, speed: number) {
+  const y = useTransform(
+    scrollYProgress, 
+    [0, 1], 
+    [0, speed * 100]
+  );
+  
+  const scale = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    [1 + (index * 0.05), 1 + (index * 0.08), 1 + (index * 0.05)]
+  );
+  
+  const opacity = useTransform(
+    scrollYProgress,
+    [0, 0.5, 1],
+    [1, 0.95 - (index * 0.05), 0.9 - (index * 0.1)]
+  );
+  
+  return { y, scale, opacity, blurValue: index > 0 ? `blur(${index * 1.5}px)` : 'none' };
+}
+
 interface ParallaxHeroProps {
   images: {
     url: string;
@@ -25,34 +48,24 @@ export default function ParallaxHero({
     offset: ['start start', 'end start'],
   });
 
+  // Pre-calculate all layer transforms
+  const layerTransforms = images.map((image, index) => 
+    createLayerTransforms(scrollYProgress, index, image.speed)
+  );
+
+  // Content effects
+  const contentY = useTransform(scrollYProgress, [0, 1], [0, 50]);
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.6]);
+  const overlayOpacityTransform = useTransform(scrollYProgress, [0, 0.5], [1, 0.8]);
+
   // Calculate the overlay background color with the specified opacity
   const overlayBg = `rgba(0, 0, 0, ${overlayOpacity})`;
 
   return (
     <div ref={ref} className={`relative ${height} overflow-hidden`}>
       {images.map((image, index) => {
-        // Create different parallax effects for each layer
-        const y = useTransform(
-          scrollYProgress, 
-          [0, 1], 
-          [0, image.speed * 100]
-        );
-        
-        // Add subtle scale and opacity effects based on scroll
-        const scale = useTransform(
-          scrollYProgress,
-          [0, 0.5, 1],
-          [1 + (index * 0.05), 1 + (index * 0.08), 1 + (index * 0.05)]
-        );
-        
-        const opacity = useTransform(
-          scrollYProgress,
-          [0, 0.5, 1],
-          [1, 0.95 - (index * 0.05), 0.9 - (index * 0.1)]
-        );
-        
-        // Apply blur based on layer depth
-        const blurValue = index > 0 ? `blur(${index * 1.5}px)` : 'none';
+        // Use pre-calculated transforms
+        const { y, scale, opacity, blurValue } = layerTransforms[index];
         
         return (
           <motion.div
@@ -79,7 +92,7 @@ export default function ParallaxHero({
         className="absolute inset-0 z-20"
         style={{ 
           backgroundColor: overlayBg,
-          opacity: useTransform(scrollYProgress, [0, 0.5], [1, 0.8])
+          opacity: overlayOpacityTransform
         }}
       />
       
@@ -87,8 +100,8 @@ export default function ParallaxHero({
       <motion.div 
         className="relative z-30 h-full flex items-center justify-center"
         style={{
-          y: useTransform(scrollYProgress, [0, 1], [0, 50]),
-          opacity: useTransform(scrollYProgress, [0, 0.8], [1, 0.6])
+          y: contentY,
+          opacity: contentOpacity
         }}
       >
         {children}
