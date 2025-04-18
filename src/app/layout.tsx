@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Libre_Baskerville } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "@/context/AuthContext";
+import FirebaseNotice from "@/components/FirebaseNotice";
 import "./globals.css";
-import 'react-toastify/dist/ReactToastify.css';
+import "react-toastify/dist/ReactToastify.css";
 
 // Elegant serif font for headings
 const cormorant = Cormorant_Garamond({
@@ -23,7 +24,8 @@ const libreBaskerville = Libre_Baskerville({
 
 export const metadata: Metadata = {
   title: "Annapurna Tours and Travels",
-  description: "Experience the beauty of the Himalayas with our exclusive tour packages",
+  description:
+    "Experience the beauty of the Himalayas with our exclusive tour packages",
   keywords: "travel, tours, Annapurna, Himalayas, trekking, adventure, Nepal",
 };
 
@@ -40,6 +42,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
           <ToastContainer position="top-right" />
+          <FirebaseNotice />
         </AuthProvider>
       </body>
     </html>
