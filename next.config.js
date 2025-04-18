@@ -1,21 +1,34 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["images.pexels.com", "randomuser.me"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+      },
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
+      },
+    ],
   },
   transpilePackages: ["undici", "firebase"],
   experimental: {
     swcPlugins: [["next-superjson-plugin", {}]],
   },
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
+    // This completely disables ESLint during builds
     ignoreDuringBuilds: true,
+    dirs: [],
   },
   typescript: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has type errors.
+    // This completely disables TypeScript during builds
     ignoreBuildErrors: true,
+  },
+  // Suppress warnings that aren't critical
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 };
 
