@@ -25,7 +25,6 @@
     "module-alias": "^2.2.3",
     "next": "14.0.3",
     "next-superjson-plugin": "^0.5.10",
-    "pexels": "^1.4.0",
     "razorpay": "^2.9.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
