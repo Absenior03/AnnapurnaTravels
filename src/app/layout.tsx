@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata } from "next";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "@/context/AuthContext";

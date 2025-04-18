@@ -1,6 +1,6 @@
 # Annapurna Tours and Travels
 
-A modern, responsive tourism website built with Next.js, Tailwind CSS, Firebase, and Stripe integration.
+A modern, responsive tourism website built with Next.js, Tailwind CSS, Firebase, and Razorpay integration.
 
 ## Features
 
@@ -8,7 +8,7 @@ A modern, responsive tourism website built with Next.js, Tailwind CSS, Firebase,
 - **User Authentication** - Secure sign-up and login using Firebase Auth
 - **Admin Panel** - Manage tour packages, track bookings, and more
 - **Dynamic Tour Pages** - Individual pages for each tour package with detailed information
-- **Payment Integration** - Secure payment processing with Stripe (test mode)
+- **Payment Integration** - Secure payment processing with Razorpay (test mode)
 - **Responsive Design** - Works seamlessly on mobile, tablet, and desktop devices
 - **Real-time Database** - Firebase Firestore for real-time data management
 - **Dynamic Images** - Integration with Pexels API for high-quality images
@@ -18,7 +18,7 @@ A modern, responsive tourism website built with Next.js, Tailwind CSS, Firebase,
 - **Frontend Framework**: Next.js 15
 - **Styling**: Tailwind CSS
 - **Authentication & Database**: Firebase
-- **Payment Processing**: Stripe
+- **Payment Processing**: Razorpay
 - **Animations**: Framer Motion
 - **Image API**: Pexels
 - **Icons**: React Icons
@@ -30,7 +30,7 @@ A modern, responsive tourism website built with Next.js, Tailwind CSS, Firebase,
 - Node.js 18.0 or later
 - npm or yarn
 - Firebase account
-- Stripe account (for test mode)
+- Razorpay account (for test mode)
 - Pexels API key
 
 ### Installation
@@ -53,7 +53,7 @@ A modern, responsive tourism website built with Next.js, Tailwind CSS, Firebase,
 3. Set up environment variables:
 
    - Copy `.env.local.example` to `.env.local`
-   - Fill in your Firebase, Stripe, and Pexels API credentials
+   - Fill in your Firebase, Razorpay, and Pexels API credentials
 
 4. Run the development server:
 

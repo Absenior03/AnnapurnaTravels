@@ -1,0 +1,9 @@
+{
+  "presets": [
+    "next/babel",
+    "@babel/preset-react",
+    ["@babel/preset-typescript", { "isTSX": true, "allExtensions": true }]
+  ],
+  "compact": false,
+  "comments": false
+}

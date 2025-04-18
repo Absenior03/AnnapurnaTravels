@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { toast } from 'react-toastify';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-toastify";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 export default function AdminLayout({
   children,
@@ -19,11 +19,11 @@ export default function AdminLayout({
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        toast.error('Please log in to access the admin panel');
-        router.push('/login');
+        toast.error("Please log in to access the admin panel");
+        router.push("/login");
       } else if (!isAdmin) {
-        toast.error('You do not have permission to access the admin panel');
-        router.push('/');
+        toast.error("You do not have permission to access the admin panel");
+        router.push("/");
       } else {
         setIsAuthorized(true);
       }
@@ -52,4 +52,4 @@ export default function AdminLayout({
       <Footer />
     </div>
   );
-} 
+}

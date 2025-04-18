@@ -1,12 +1,13 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { MdLocationOn, MdTimer, MdCalendarMonth } from 'react-icons/md';
-import { FaHiking } from 'react-icons/fa';
-import React, { useState } from 'react';
-import { Tour } from '@/types';
+import Image from "next/image";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { MdLocationOn, MdTimer, MdCalendarMonth } from "react-icons/md";
+import { FaHiking } from "react-icons/fa";
+import React, { useState } from "react";
+import { Tour } from "@/types";
+import { formatRupees } from "@/utils/razorpay";
 
 interface TourCardProps {
   tour: Tour;
@@ -16,11 +17,14 @@ export default function TourCard({ tour }: TourCardProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Format date to readable format
-  const formattedDate = new Date(tour.departureDate).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  const formattedDate = new Date(tour.departureDate).toLocaleDateString(
+    "en-US",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }
+  );
 
   const nextImage = () => {
     setCurrentImageIndex((prev) =>
@@ -37,7 +41,7 @@ export default function TourCard({ tour }: TourCardProps) {
   // Extract carousel controls into a separate client component
   const ImageControls = () => {
     if (tour.imageUrls.length <= 1) return null;
-    
+
     return (
       <>
         <button
@@ -62,9 +66,9 @@ export default function TourCard({ tour }: TourCardProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      whileHover={{ 
+      whileHover={{
         scale: 1.02,
-        transition: { duration: 0.2 }
+        transition: { duration: 0.2 },
       }}
     >
       <div className="relative h-48 w-full">
@@ -76,41 +80,43 @@ export default function TourCard({ tour }: TourCardProps) {
             className="object-cover"
           />
         </div>
-        
+
         <ImageControls />
       </div>
-      
+
       <div className="p-4">
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">{tour.title}</h3>
-        
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+          {tour.title}
+        </h3>
+
         <div className="flex items-center text-gray-600 mb-2">
           <MdLocationOn className="mr-1" />
           <span>{tour.location}</span>
         </div>
-        
+
         <div className="grid grid-cols-2 gap-2 mb-4">
           <div className="flex items-center text-gray-600">
             <MdTimer className="mr-1" />
             <span>{tour.duration} days</span>
           </div>
-          
+
           <div className="flex items-center text-gray-600">
             <MdCalendarMonth className="mr-1" />
             <span>{formattedDate}</span>
           </div>
-          
+
           <div className="flex items-center text-gray-600">
             <FaHiking className="mr-1" />
             <span>{tour.difficulty}</span>
           </div>
-          
+
           <div className="flex items-center font-semibold text-emerald-600">
-            ₹{tour.price.toLocaleString('en-IN')}
+            {formatRupees(tour.price)}
           </div>
         </div>
-        
+
         <Link href={`/tours/${tour.id}`} className="block">
-          <motion.div 
+          <motion.div
             className="bg-emerald-600 text-white py-2 px-4 rounded text-center hover:bg-emerald-700 transition-colors duration-300"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.98 }}
@@ -121,4 +127,4 @@ export default function TourCard({ tour }: TourCardProps) {
       </div>
     </motion.div>
   );
-} 
+}

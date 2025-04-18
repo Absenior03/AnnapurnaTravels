@@ -22,18 +22,26 @@ if [ -L "@" ]; then
 fi
 ln -sf src "@"
 
-# ===== AGGRESSIVE BABEL CLEANUP =====
-echo "Performing aggressive Babel configuration cleanup..."
+# ===== BABEL SETUP =====
+echo "Setting up Babel configuration..."
 
-# Remove all Babel configuration files
-rm -f .babelrc .babelrc.js .babelrc.json babel.config.js .babelrc.* babel*.js
-
-# Create an empty .babelrc to override any configurations
-echo "{}" > .babelrc
+# Create proper Babel configuration if it doesn't exist
+if [ ! -f .babelrc ] || [ ! -s .babelrc ]; then
+  echo "Creating Babel configuration file..."
+  cat > .babelrc << EOL
+{
+  "presets": [
+    "next/babel",
+    "@babel/preset-react",
+    ["@babel/preset-typescript", { "isTSX": true, "allExtensions": true }]
+  ]
+}
+EOL
+fi
 
 # Search for any hidden Babel configs and report them
 echo "Checking for any hidden Babel configuration files..."
-HIDDEN_BABEL=$(find . -name ".babelrc*" -o -name "babel*" | grep -v "node_modules")
+HIDDEN_BABEL=$(find . -name ".babelrc*" -o -name "babel*" | grep -v "node_modules" | grep -v ".babelrc")
 if [ -n "$HIDDEN_BABEL" ]; then
   echo "WARNING: Found potential Babel configuration files that might conflict with SWC:"
   echo "$HIDDEN_BABEL"
@@ -42,7 +50,7 @@ if [ -n "$HIDDEN_BABEL" ]; then
   # Try to remove or disable each file
   for file in $HIDDEN_BABEL; do
     echo "Disabling: $file"
-    mv "$file" "${file}.disabled" 2>/dev/null || rm -f "$file" 2>/dev/null || echo "{}" > "$file" 2>/dev/null
+    mv "$file" "${file}.disabled" 2>/dev/null || rm -f "$file" 2>/dev/null
   done
 fi
 

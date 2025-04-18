@@ -1,18 +1,25 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import { FiMenu, FiX, FiUser, FiLogOut, FiSettings, FiCalendar } from 'react-icons/fi';
-import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import {
+  FiMenu,
+  FiX,
+  FiUser,
+  FiLogOut,
+  FiSettings,
+  FiCalendar,
+} from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "react-toastify";
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'Tours', href: '/tours' },
-  { name: 'About', href: '/about' },
-  { name: 'Contact', href: '/contact' },
+  { name: "Home", href: "/" },
+  { name: "Tours", href: "/tours" },
+  { name: "About", href: "/about" },
+  { name: "Contact", href: "/contact" },
 ];
 
 export default function Navbar() {
@@ -22,7 +29,7 @@ export default function Navbar() {
 
   // Check if the authentication is complete (to avoid flashing login/logout state)
   const [authChecked, setAuthChecked] = useState(false);
-  
+
   useEffect(() => {
     // Set authChecked to true after the first render
     setAuthChecked(true);
@@ -31,9 +38,9 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success('Logged out successfully');
+      toast.success("Logged out successfully");
     } catch (error) {
-      toast.error('Failed to log out');
+      toast.error("Failed to log out");
     }
   };
 
@@ -50,17 +57,18 @@ export default function Navbar() {
             <div className="hidden md:ml-6 md:block">
               <div className="flex space-x-4">
                 {navigation.map((item) => {
-                  const isActive = pathname === item.href || 
-                    (item.href !== '/' && pathname?.startsWith(item.href));
-                    
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/" && pathname?.startsWith(item.href));
+
                   return (
                     <Link
                       key={item.name}
                       href={item.href}
                       className={`px-3 py-2 text-sm font-medium rounded-md hover:bg-emerald-50 hover:text-emerald-700 transition-colors duration-200 ${
                         isActive
-                          ? 'text-emerald-700 bg-emerald-50'
-                          : 'text-gray-700'
+                          ? "text-emerald-700 bg-emerald-50"
+                          : "text-gray-700"
                       }`}
                     >
                       {item.name}
@@ -80,7 +88,7 @@ export default function Navbar() {
                         {user.photoURL ? (
                           <img
                             src={user.photoURL}
-                            alt={user.displayName || 'User'}
+                            alt={user.displayName || "User"}
                             className="h-8 w-8 rounded-full"
                           />
                         ) : (
@@ -88,16 +96,16 @@ export default function Navbar() {
                         )}
                       </div>
                       <span className="ml-2 text-sm font-medium text-gray-700">
-                        {user.displayName || user.email?.split('@')[0]}
+                        {user.displayName || user.email?.split("@")[0]}
                       </span>
                     </Link>
 
                     <Link
                       href="/bookings"
                       className={`flex items-center px-3 py-2 text-sm font-medium rounded-md hover:bg-emerald-50 transition-colors duration-200 ${
-                        pathname === '/bookings'
-                          ? 'text-emerald-700 bg-emerald-50'
-                          : 'text-gray-700'
+                        pathname === "/bookings"
+                          ? "text-emerald-700 bg-emerald-50"
+                          : "text-gray-700"
                       }`}
                     >
                       <FiCalendar className="mr-2 h-4 w-4" />
@@ -162,23 +170,24 @@ export default function Navbar() {
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden bg-white"
           >
             <div className="space-y-1 px-4 pb-3 pt-2">
               {navigation.map((item) => {
-                const isActive = pathname === item.href || 
-                  (item.href !== '/' && pathname?.startsWith(item.href));
-                  
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname?.startsWith(item.href));
+
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={`block px-3 py-2 text-base font-medium rounded-md ${
                       isActive
-                        ? 'text-emerald-700 bg-emerald-50'
-                        : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-700'
+                        ? "text-emerald-700 bg-emerald-50"
+                        : "text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
@@ -186,7 +195,7 @@ export default function Navbar() {
                   </Link>
                 );
               })}
-              
+
               {user ? (
                 <>
                   <Link
@@ -199,9 +208,9 @@ export default function Navbar() {
                   <Link
                     href="/bookings"
                     className={`block px-3 py-2 text-base font-medium rounded-md ${
-                      pathname === '/bookings'
-                        ? 'text-emerald-700 bg-emerald-50'
-                        : 'text-gray-700 hover:bg-emerald-50 hover:text-emerald-700'
+                      pathname === "/bookings"
+                        ? "text-emerald-700 bg-emerald-50"
+                        : "text-gray-700 hover:bg-emerald-50 hover:text-emerald-700"
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
@@ -253,4 +262,4 @@ export default function Navbar() {
       </AnimatePresence>
     </nav>
   );
-} 
+}

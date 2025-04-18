@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 interface ImageCarouselProps {
   images: string[];
@@ -11,21 +11,21 @@ interface ImageCarouselProps {
   className?: string;
 }
 
-export default function ImageCarousel({ 
-  images, 
+export default function ImageCarousel({
+  images,
   autoSlideInterval = 5000,
-  className = ''
+  className = "",
 }: ImageCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const goToPrevious = () => {
-    setCurrentIndex((prevIndex) => 
+    setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? images.length - 1 : prevIndex - 1
     );
   };
 
   const goToNext = () => {
-    setCurrentIndex((prevIndex) => 
+    setCurrentIndex((prevIndex) =>
       prevIndex === images.length - 1 ? 0 : prevIndex + 1
     );
   };
@@ -40,7 +40,9 @@ export default function ImageCarousel({
 
   if (!images.length) {
     return (
-      <div className={`relative w-full h-full bg-gray-200 rounded-lg ${className}`}>
+      <div
+        className={`relative w-full h-full bg-gray-200 rounded-lg ${className}`}
+      >
         <div className="absolute inset-0 flex items-center justify-center">
           <p className="text-gray-500">No images available</p>
         </div>
@@ -59,8 +61,8 @@ export default function ImageCarousel({
           transition={{ duration: 0.5 }}
           className="w-full h-full relative"
         >
-          <Image 
-            src={images[currentIndex]} 
+          <Image
+            src={images[currentIndex]}
             alt={`Slide ${currentIndex}`}
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -73,14 +75,14 @@ export default function ImageCarousel({
       {/* Navigation buttons */}
       {images.length > 1 && (
         <>
-          <button 
+          <button
             onClick={goToPrevious}
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors z-10"
             aria-label="Previous image"
           >
             <FiChevronLeft className="h-5 w-5" />
           </button>
-          <button 
+          <button
             onClick={goToNext}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white p-2 rounded-full transition-colors z-10"
             aria-label="Next image"
@@ -98,7 +100,7 @@ export default function ImageCarousel({
               key={index}
               onClick={() => setCurrentIndex(index)}
               className={`h-2 w-2 rounded-full transition-colors ${
-                index === currentIndex ? 'bg-white' : 'bg-white/50'
+                index === currentIndex ? "bg-white" : "bg-white/50"
               }`}
               aria-label={`Go to slide ${index + 1}`}
             />
@@ -107,4 +109,4 @@ export default function ImageCarousel({
       )}
     </div>
   );
-} 
+}
