@@ -34,10 +34,35 @@ const nextConfig = {
   // Prevent static optimization of auth pages
   experimental: {
     serverActions: true,
+    // Only use client components for auth pages
+    serverComponentsExternalPackages: ["react-dom", "react"],
   },
 
   // Configure page builds
   pageExtensions: ["js", "jsx", "ts", "tsx"],
+
+  // Custom runtime configuration
+  onDemandEntries: {
+    // Keep auth pages in development mode only
+    maxInactiveAge: 1000 * 60 * 60,
+    pagesBufferLength: 5,
+  },
+
+  // Override specific paths
+  rewrites: async () => {
+    return [
+      {
+        source: "/(login|signup|reset-password)",
+        destination: "/_auth/:path*",
+        has: [
+          {
+            type: "header",
+            key: "x-middleware-rewrite",
+          },
+        ],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

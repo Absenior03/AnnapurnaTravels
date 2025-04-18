@@ -10,16 +10,25 @@ export function middleware(request: NextRequest) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
-    pathname.includes(".")
+    pathname.includes(".") ||
+    pathname.includes("favicon")
   ) {
     return NextResponse.next();
   }
 
-  // Mark auth routes to be client-side only
+  // For auth routes, we need to ensure they load without SSR
   if (isAuthRoute(pathname)) {
     const response = NextResponse.next();
+
+    // These headers prevent the page from being cached by the CDN
     response.headers.set("x-middleware-cache", "no-cache");
-    response.headers.set("Cache-Control", "no-store");
+    response.headers.set("Cache-Control", "no-store, must-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+
+    // This header tells the browser not to prerender this page
+    response.headers.set("x-middleware-rewrite", "true");
+
     return response;
   }
 
