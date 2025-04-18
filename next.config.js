@@ -30,6 +30,14 @@ const nextConfig = {
     };
     return config;
   },
+
+  // Prevent static optimization of auth pages
+  experimental: {
+    serverActions: true,
+  },
+
+  // Configure page builds
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
 };
 
 module.exports = nextConfig;
