@@ -9,9 +9,9 @@ const nextConfig = {
     ],
   },
   transpilePackages: ["three"],
+  output: "standalone",
   experimental: {
     serverComponentsExternalPackages: ["sequelize"],
-    outputStandalone: true,
     outputFileTracingIncludes: {
       "/api/**/*": ["node_modules/**/*"],
     },
@@ -20,8 +20,6 @@ const nextConfig = {
     // Completely disable ESLint during build
     ignoreDuringBuilds: true,
     dirs: [], // Empty array means don't run ESLint on any directory
-    // Add these additional options to ensure ESLint is fully disabled
-    lintDuringBuild: false,
   },
   typescript: {
     // Disable TypeScript type checking during build
