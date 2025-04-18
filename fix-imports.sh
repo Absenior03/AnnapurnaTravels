@@ -22,12 +22,37 @@ if [ -L "@" ]; then
 fi
 ln -sf src "@"
 
-# Clear any Babel configuration files
-echo "Removing Babel configuration files to avoid conflicts with SWC..."
-rm -f .babelrc .babelrc.js .babelrc.json babel.config.js
-echo "{}" > .babelrc.empty
+# ===== AGGRESSIVE BABEL CLEANUP =====
+echo "Performing aggressive Babel configuration cleanup..."
 
-echo "Creating .env.local with NODE_PATH..."
-echo "NODE_PATH=." > .env.local
+# Remove all Babel configuration files
+rm -f .babelrc .babelrc.js .babelrc.json babel.config.js .babelrc.* babel*.js
+
+# Create an empty .babelrc to override any configurations
+echo "{}" > .babelrc
+
+# Search for any hidden Babel configs and report them
+echo "Checking for any hidden Babel configuration files..."
+HIDDEN_BABEL=$(find . -name ".babelrc*" -o -name "babel*" | grep -v "node_modules")
+if [ -n "$HIDDEN_BABEL" ]; then
+  echo "WARNING: Found potential Babel configuration files that might conflict with SWC:"
+  echo "$HIDDEN_BABEL"
+  echo "Attempting to remove or disable them..."
+  
+  # Try to remove or disable each file
+  for file in $HIDDEN_BABEL; do
+    echo "Disabling: $file"
+    mv "$file" "${file}.disabled" 2>/dev/null || rm -f "$file" 2>/dev/null || echo "{}" > "$file" 2>/dev/null
+  done
+fi
+
+echo "Creating .env.local with NODE_PATH and SWC settings..."
+cat > .env.local << EOL
+NODE_PATH=.
+NEXT_DISABLE_ETW=1
+SWC_MINIFY=true
+DISABLE_ESLINT_PLUGIN=true
+NEXT_DISABLE_ESLINT=1
+EOL
 
 echo "Import path fixes complete!" 

@@ -2,6 +2,7 @@
 const path = require("path");
 
 const nextConfig = {
+  // Basic image configuration
   images: {
     remotePatterns: [
       {
@@ -9,41 +10,33 @@ const nextConfig = {
         hostname: "**",
       },
     ],
+    unoptimized: true,
   },
-  transpilePackages: ["three"],
+
+  // Output standalone build
   output: "standalone",
+
+  // Ignore all issues with ESLint and TypeScript
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
+  // Explicit disabling of features
   experimental: {
     serverComponentsExternalPackages: ["sequelize"],
     outputFileTracingIncludes: {
       "/api/**/*": ["node_modules/**/*"],
     },
+    swcMinify: true,
+    forceSwcTransforms: true,
   },
-  eslint: {
-    // Completely disable ESLint during build
-    ignoreDuringBuilds: true,
-    dirs: [], // Empty array means don't run ESLint on any directory
-  },
-  typescript: {
-    // Disable TypeScript type checking during build
-    ignoreBuildErrors: true,
-  },
-  // Ensure SWC compiler is used - required for next/font
-  swcMinify: true,
-  compiler: {
-    // Force SWC usage and disable Babel
-    styledComponents: true,
-  },
-  // Explicitly disable Babel
-  babel: false,
-  // Suppress warnings that aren't critical
-  onDemandEntries: {
-    maxInactiveAge: 60 * 60 * 1000, // 1 hour
-    pagesBufferLength: 5,
-  },
-  reactStrictMode: true,
-  // Ignore all ESLint warnings and errors
-  webpack: (config, { dev, isServer }) => {
-    // This makes Webpack ignore ESLint errors
+
+  // Webpack configuration for module resolution
+  webpack: (config, { isServer }) => {
+    // Ignore all warnings
     config.ignoreWarnings = [{ message: /.*/ }];
 
     // Add module resolution aliases

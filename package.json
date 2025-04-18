@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_PATH=. DISABLE_ESLINT_PLUGIN=true NEXT_DISABLE_ESLINT=1 NODE_OPTIONS=--max_old_space_size=4096 SWC_MINIFY=true next build --no-lint",
+    "build": "chmod +x fix-imports.sh && ./fix-imports.sh && NEXT_TELEMETRY_DISABLED=1 NEXT_DISABLE_ETW=1 NODE_PATH=. DISABLE_ESLINT_PLUGIN=true NEXT_DISABLE_ESLINT=1 NODE_OPTIONS=--max_old_space_size=4096 SWC_MINIFY=true next build --no-lint",
+    "postbuild": "next-image-export-optimizer",
     "start": "next start",
     "lint": "next lint",
     "prepare-deploy": "chmod +x fix-imports.sh && ./fix-imports.sh"

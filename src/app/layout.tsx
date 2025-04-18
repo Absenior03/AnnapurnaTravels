@@ -1,27 +1,11 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Libre_Baskerville } from "next/font/google";
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "@/context/AuthContext";
 import FirebaseNotice from "@/components/FirebaseNotice";
 import PexelsNotice from "@/components/PexelsNotice";
+import { fontClasses, addFontStyles } from "./fonts";
 import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
-
-// Elegant serif font for headings
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-// Refined serif font for body text
-const libreBaskerville = Libre_Baskerville({
-  variable: "--font-libre",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "700"],
-});
 
 export const metadata: Metadata = {
   title: "Annapurna Tours and Travels",
@@ -37,9 +21,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${libreBaskerville.variable} ${cormorant.variable} antialiased`}
-      >
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: addFontStyles() }} />
+      </head>
+      <body className={`${fontClasses.body} antialiased`}>
         <AuthProvider>
           {children}
           <ToastContainer position="top-right" />
