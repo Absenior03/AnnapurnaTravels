@@ -90,13 +90,6 @@ This project is ready to be deployed on Vercel:
 3. Add your environment variables in the Vercel project settings.
 4. Deploy!
 
-## Admin Access
-
-For admin panel access, use the following credentials:
-
-- Email: admin@annapurnatours.com
-- Password: securepassword123 (specified in your .env file)
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
