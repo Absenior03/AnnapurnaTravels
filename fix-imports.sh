@@ -22,6 +22,11 @@ if [ -L "@" ]; then
 fi
 ln -sf src "@"
 
+# Clear any Babel configuration files
+echo "Removing Babel configuration files to avoid conflicts with SWC..."
+rm -f .babelrc .babelrc.js .babelrc.json babel.config.js
+echo "{}" > .babelrc.empty
+
 echo "Creating .env.local with NODE_PATH..."
 echo "NODE_PATH=." > .env.local
 

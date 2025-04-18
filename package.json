@@ -8,10 +8,10 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "NODE_PATH=. DISABLE_ESLINT_PLUGIN=true NEXT_DISABLE_ESLINT=1 NODE_OPTIONS=--max_old_space_size=4096 next build --no-lint",
+    "build": "NODE_PATH=. DISABLE_ESLINT_PLUGIN=true NEXT_DISABLE_ESLINT=1 NODE_OPTIONS=--max_old_space_size=4096 SWC_MINIFY=true next build --no-lint",
     "start": "next start",
     "lint": "next lint",
-    "prepare-deploy": "./fix-imports.sh"
+    "prepare-deploy": "chmod +x fix-imports.sh && ./fix-imports.sh"
   },
   "_moduleAliases": {
     "@": "./src",

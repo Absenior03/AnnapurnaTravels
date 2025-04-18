@@ -30,8 +30,11 @@ const nextConfig = {
   // Ensure SWC compiler is used - required for next/font
   swcMinify: true,
   compiler: {
+    // Force SWC usage and disable Babel
     styledComponents: true,
   },
+  // Explicitly disable Babel
+  babel: false,
   // Suppress warnings that aren't critical
   onDemandEntries: {
     maxInactiveAge: 60 * 60 * 1000, // 1 hour
