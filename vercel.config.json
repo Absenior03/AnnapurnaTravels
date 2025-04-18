@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "buildCommand": "./build.sh",
+  "devCommand": "next dev",
+  "installCommand": "npm install && chmod +x build.sh",
+  "framework": null,
+  "outputDirectory": ".next"
+} 

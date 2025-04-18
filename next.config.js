@@ -1,52 +1,33 @@
 /** @type {import('next').NextConfig} */
 const path = require("path");
 
+// Create a minimal config to avoid any complexities
 const nextConfig = {
-  // Basic image configuration
+  // Basic settings that won't cause issues
+  reactStrictMode: false,
+  swcMinify: true,
+
+  // Disable optimizations that might cause problems
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
-    ],
     unoptimized: true,
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
 
-  // Output standalone build
+  // Output as standalone
   output: "standalone",
 
-  // Ignore all issues with ESLint and TypeScript
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // Disable all checks during build
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
 
-  // Explicit disabling of features
-  experimental: {
-    serverComponentsExternalPackages: ["sequelize"],
-    outputFileTracingIncludes: {
-      "/api/**/*": ["node_modules/**/*"],
-    },
-    swcMinify: true,
-    forceSwcTransforms: true,
-  },
-
-  // Webpack configuration for module resolution
-  webpack: (config, { isServer }) => {
-    // Ignore all warnings
-    config.ignoreWarnings = [{ message: /.*/ }];
-
-    // Add module resolution aliases
+  // Basic webpack config for aliases only
+  webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": path.resolve(__dirname, "./src"),
       "@/components": path.resolve(__dirname, "./components"),
       "@/context": path.resolve(__dirname, "./context"),
     };
-
     return config;
   },
 };

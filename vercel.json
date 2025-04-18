@@ -1,18 +1,13 @@
 {
-  "buildCommand": "chmod +x fix-imports.sh && ./fix-imports.sh && chmod +x .next/purge-babel && ./.next/purge-babel && NEXT_TELEMETRY_DISABLED=1 NEXT_DISABLE_ETW=1 NODE_PATH=. DISABLE_ESLINT_PLUGIN=true NEXT_DISABLE_ESLINT=1 NODE_OPTIONS=--max_old_space_size=4096 SWC_MINIFY=true next build --no-lint",
+  "version": 2,
+  "buildCommand": "./build.sh",
   "devCommand": "next dev",
-  "installCommand": "npm install",
-  "framework": "nextjs",
+  "installCommand": "npm install && chmod +x build.sh",
+  "framework": null,
   "env": {
     "DISABLE_ESLINT_PLUGIN": "true",
     "NEXT_DISABLE_ESLINT": "1",
     "NODE_PATH": ".",
-    "NEXT_PUBLIC_FIREBASE_API_KEY": "${NEXT_PUBLIC_FIREBASE_API_KEY}",
-    "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN": "${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}",
-    "NEXT_PUBLIC_FIREBASE_PROJECT_ID": "${NEXT_PUBLIC_FIREBASE_PROJECT_ID}",
-    "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET": "${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}",
-    "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID": "${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}",
-    "NEXT_PUBLIC_FIREBASE_APP_ID": "${NEXT_PUBLIC_FIREBASE_APP_ID}",
     "SWC_MINIFY": "true",
     "NEXT_TELEMETRY_DISABLED": "1",
     "NEXT_DISABLE_ETW": "1"
