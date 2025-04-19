@@ -23,7 +23,7 @@ import PexelsNotice from "@/components/PexelsNotice";
 import StatCard from "@/components/common/StatCard";
 import TestimonialCard from "@/components/common/TestimonialCard";
 import AnimatedSection from "@/components/animations/AnimatedSection";
-import Hero3D from "@/components/hero/Hero3D";
+import SafeHero from "@/components/hero/SafeHero";
 import dynamic from "next/dynamic";
 
 // Dynamically import the Hero3D component with no SSR
@@ -133,8 +133,8 @@ export default function Home() {
     <>
       <Navbar />
       <main className="text-sm">
-        {/* 3D Hero Section */}
-        <DynamicHero3D />
+        {/* 3D Hero Section using SafeHero component */}
+        <SafeHero />
 
         {/* Stats Section */}
         <AnimatedSection className="py-16 bg-gray-50">
