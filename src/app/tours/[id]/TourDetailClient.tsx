@@ -12,6 +12,10 @@ import {
   FiUsers,
   FiChevronLeft,
   FiChevronRight,
+  FiAward,
+  FiCheckCircle,
+  FiArrowLeft,
+  FiShoppingCart,
 } from "react-icons/fi";
 import { Tour } from "@/types";
 import { useAuth } from "@/context/AuthContext";
@@ -25,18 +29,25 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PexelsNotice from "@/components/PexelsNotice";
 import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
+import { useBookings } from "@/hooks/useBookings";
+import ImageCarousel from "@/components/ui/ImageCarousel";
 
 interface TourDetailClientProps {
   tour: Tour;
 }
 
 export default function TourDetailClient({ tour }: TourDetailClientProps) {
+  const router = useRouter();
   const { user } = useAuth();
+  const { createBooking } = useBookings();
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [pexelsImages, setPexelsImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [numberOfPeople, setNumberOfPeople] = useState(1);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
 
   // Fetch Pexels images on component mount
   useEffect(() => {
@@ -60,6 +71,7 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
   const handleBookNow = () => {
     if (!user) {
       toast.info("Please log in to book this tour");
+      router.push("/login");
       return;
     }
     setBookingModalOpen(true);
@@ -74,31 +86,68 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
 
     setIsSubmitting(true);
     try {
+      const totalAmount = tour.price * numberOfPeople;
+
       // Create Razorpay order
-      const orderId = await createRazorpayOrder(tour.price, tour.id, user.uid);
+      let orderId;
+      try {
+        orderId = await createRazorpayOrder(totalAmount, tour.id, user.uid);
+      } catch (error) {
+        console.error("Error creating Razorpay order:", error);
+        toast.error("Failed to initialize payment");
+        setIsSubmitting(false);
+        return;
+      }
 
-      // Initialize payment
-      await initializeRazorpayPayment(
+      // Initialize Razorpay payment
+      initializeRazorpayPayment(
         orderId,
-        tour.price,
+        totalAmount,
         tour,
-        user.email,
-        user.displayName || "Customer",
-        () => {
+        user.email || "",
+        user.displayName || user.email?.split("@")[0] || "Customer",
+        async () => {
           // On successful payment
-          toast.success("Booking confirmed! Thank you for your purchase.");
-          setBookingModalOpen(false);
+          try {
+            // Create a booking in Firestore
+            await createBooking({
+              tourId: tour.id,
+              departureDate: new Date(tour.departureDate),
+              numberOfPeople,
+              totalAmount,
+            });
 
-          // In a real application, you would save the booking to the database here
+            toast.success(
+              "Booking confirmed! Thank you for choosing Annapurna Tours."
+            );
+            setBookingSuccess(true);
+
+            // Close modal after success message
+            setTimeout(() => {
+              setBookingModalOpen(false);
+              setBookingSuccess(false);
+              // Redirect to bookings page
+              router.push("/bookings");
+            }, 3000);
+          } catch (error) {
+            console.error("Error creating booking:", error);
+            toast.error(
+              "Payment successful but booking failed. Please contact support."
+            );
+          } finally {
+            setIsSubmitting(false);
+          }
         },
         (error) => {
           // On payment error
-          toast.error(`Payment failed: ${error.message}`);
+          console.error("Payment error:", error);
+          toast.error("Payment failed. Please try again.");
+          setIsSubmitting(false);
         }
       );
-    } catch (error: any) {
-      toast.error(`Error processing payment: ${error.message}`);
-    } finally {
+    } catch (error) {
+      console.error("Error processing payment:", error);
+      toast.error("Failed to process payment");
       setIsSubmitting(false);
     }
   };
@@ -124,6 +173,158 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
 
     return () => clearInterval(intervalId);
   }, [pexelsImages]);
+
+  // Format date
+  const formattedDate = new Date(tour.departureDate).toLocaleDateString(
+    "en-US",
+    {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }
+  );
+
+  // Booking Modal Component
+  const BookingModal = () => {
+    if (!bookingModalOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full"
+        >
+          {bookingSuccess ? (
+            <div className="text-center py-8">
+              <div className="mb-4 flex justify-center">
+                <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <FiCheckCircle className="h-10 w-10 text-green-600" />
+                </div>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Booking Successful!
+              </h2>
+              <p className="text-gray-600 mb-2">
+                Your booking has been confirmed.
+              </p>
+              <p className="text-gray-600">Redirecting to your bookings...</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4">
+                Complete Your Booking
+              </h2>
+
+              <div className="mb-6">
+                <h3 className="font-medium text-gray-800 mb-2">{tour.title}</h3>
+                <div className="flex justify-between text-gray-600 mb-1">
+                  <span>Departure Date:</span>
+                  <span>{formattedDate}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 mb-1">
+                  <span>Number of People:</span>
+                  <span>{numberOfPeople}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 mb-1">
+                  <span>Tour Duration:</span>
+                  <span>{tour.duration} days</span>
+                </div>
+                <div className="flex justify-between font-medium text-gray-800 mt-2">
+                  <span>Total Amount:</span>
+                  <span>{formatRupees(tour.price * numberOfPeople)}</span>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                <label
+                  htmlFor="numberOfPeople"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  Number of People
+                </label>
+                <div className="flex items-center">
+                  <button
+                    onClick={() =>
+                      setNumberOfPeople(Math.max(1, numberOfPeople - 1))
+                    }
+                    className="p-2 border border-gray-300 rounded-l-md text-gray-600 hover:bg-gray-100"
+                    disabled={numberOfPeople <= 1}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    id="numberOfPeople"
+                    value={numberOfPeople}
+                    onChange={(e) => setNumberOfPeople(Number(e.target.value))}
+                    min="1"
+                    max="10"
+                    className="p-2 border-t border-b border-gray-300 text-center w-16 text-gray-700"
+                  />
+                  <button
+                    onClick={() =>
+                      setNumberOfPeople(Math.min(10, numberOfPeople + 1))
+                    }
+                    className="p-2 border border-gray-300 rounded-r-md text-gray-600 hover:bg-gray-100"
+                    disabled={numberOfPeople >= 10}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex justify-between space-x-4">
+                <button
+                  onClick={() => setBookingModalOpen(false)}
+                  className="flex-1 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePayment}
+                  disabled={isSubmitting}
+                  className="flex-1 py-2 bg-emerald-600 rounded-md text-white hover:bg-emerald-700 font-medium flex items-center justify-center"
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center">
+                      <svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    <span className="flex items-center">
+                      <FiShoppingCart className="mr-2" />
+                      Confirm & Pay
+                    </span>
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </motion.div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -404,64 +605,8 @@ export default function TourDetailClient({ tour }: TourDetailClientProps) {
         </div>
       </main>
 
-      {/* Booking confirmation modal */}
-      {bookingModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full"
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Confirm Your Booking
-            </h2>
-
-            <div className="mb-6">
-              <h3 className="font-semibold text-lg text-gray-800 mb-2">
-                {tour.title}
-              </h3>
-              <div className="flex justify-between mb-1">
-                <span className="text-gray-600">Price:</span>
-                <span className="font-medium">{formatRupees(tour.price)}</span>
-              </div>
-              <div className="flex justify-between mb-1">
-                <span className="text-gray-600">Duration:</span>
-                <span className="font-medium">{tour.duration} days</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Location:</span>
-                <span className="font-medium">{tour.location}</span>
-              </div>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4 mb-6">
-              <p className="text-gray-600 mb-2">
-                By proceeding, you agree to our booking terms and conditions.
-              </p>
-              <p className="text-gray-500 text-sm">
-                Note: This is a test payment. No actual charges will be made.
-              </p>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                onClick={() => setBookingModalOpen(false)}
-                className="flex-1 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePayment}
-                disabled={isSubmitting}
-                className="flex-1 bg-emerald-600 text-white py-2 rounded-md hover:bg-emerald-700 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? "Processing..." : "Proceed to Payment"}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      {/* Render the booking modal */}
+      <BookingModal />
 
       <Footer />
     </>
