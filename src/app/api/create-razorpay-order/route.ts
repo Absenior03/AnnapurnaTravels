@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { v4 as uuidv4 } from "uuid";
 
-// Initialize Razorpay instance
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || "",
-  key_secret: process.env.RAZORPAY_KEY_SECRET || "",
-});
+// Check if Razorpay credentials are available
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
+
+// Initialize Razorpay instance or create a mock implementation
+let razorpay: Razorpay | null = null;
+
+// Only initialize Razorpay if credentials are available
+if (razorpayKeyId && razorpayKeySecret) {
+  razorpay = new Razorpay({
+    key_id: razorpayKeyId,
+    key_secret: razorpayKeySecret,
+  });
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +36,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create order
+    // If Razorpay is not initialized, return a mock order for development
+    if (!razorpay) {
+      console.warn("Razorpay not initialized. Using mock implementation.");
+      return NextResponse.json({
+        id: `order_${uuidv4().replace(/-/g, "")}`,
+        entity: "order",
+        amount,
+        amount_paid: 0,
+        amount_due: amount,
+        currency,
+        receipt,
+        status: "created",
+        notes: {
+          tourId,
+          userId,
+        },
+        created_at: Date.now(),
+      });
+    }
+
+    // Create order with Razorpay
     const order = await razorpay.orders.create({
       amount, // Amount in smallest currency unit (e.g., paise for INR)
       currency,

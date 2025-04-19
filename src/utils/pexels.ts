@@ -125,3 +125,22 @@ export async function getLocationImages(
   );
   return getRandomImages(perPage);
 }
+
+// Add the missing functions that are being imported by other components
+
+// Function to fetch Pexels images, returns an array of URLs
+export async function fetchPexelsImages(
+  query: string,
+  count: number = 6
+): Promise<string[]> {
+  console.log(`Fetching Pexels images for: ${query} (using hardcoded images)`);
+  const images = getRandomImages(count);
+  return images.map((img) => img.src.large || img.url);
+}
+
+// Function to get a hero image for the homepage
+export async function getHeroImage(): Promise<string> {
+  console.log("Getting hero image (using hardcoded image)");
+  // Return the URL of the first default image
+  return DEFAULT_IMAGES[0].src.large || DEFAULT_IMAGES[0].url;
+}
