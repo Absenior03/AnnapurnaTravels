@@ -1,81 +1,117 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import {
-  getAuth,
-  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  User,
+  onAuthStateChanged,
+  User as FirebaseUser,
+  updateProfile,
 } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
-import { initializeApp } from "firebase/app";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { User } from "@/types";
 
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-interface AuthContextType {
+interface AuthContextProps {
   user: User | null;
-  isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
+  isAdmin: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+// Create the context with a default value to avoid undefined errors
+const AuthContext = createContext<AuthContextProps>({
+  user: null,
+  loading: true,
+  signIn: async () => {
+    console.warn("Auth context not yet initialized");
+  },
+  signUp: async () => {
+    console.warn("Auth context not yet initialized");
+  },
+  logout: async () => {
+    console.warn("Auth context not yet initialized");
+  },
+  isAdmin: false,
+});
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
+
+  // Check if Firebase auth is available (client-side only)
+  const isFirebaseAvailable =
+    typeof window !== "undefined" && auth !== null && db !== null;
+
+  // Update isAdmin check to look for role === 'admin' instead of just email
+  const isAdmin =
+    user?.role === "admin" ||
+    user?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
+    if (!isFirebaseAvailable) {
+      console.warn("Firebase not initialized - using demo mode");
+      setLoading(false);
+      return () => {};
+    }
 
-      // Check if user is admin
-      if (user) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          setIsAdmin(userDoc.exists() && userDoc.data()?.role === "admin");
-        } catch (error) {
-          console.error("Error checking admin status:", error);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      try {
+        if (firebaseUser) {
+          const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+          if (userDoc.exists()) {
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              role: userDoc.data().role || "user",
+            });
+          } else {
+            // If this is the admin email, set role to admin automatically
+            const isAdminEmail =
+              firebaseUser.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+
+            setUser({
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || "",
+              displayName: firebaseUser.displayName,
+              photoURL: firebaseUser.photoURL,
+              role: isAdminEmail ? "admin" : "user",
+            });
+
+            // Create user document if it doesn't exist
+            await setDoc(doc(db, "users", firebaseUser.uid), {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              displayName: firebaseUser.displayName,
+              role: isAdminEmail ? "admin" : "user",
+              createdAt: new Date(),
+            });
+          }
+        } else {
+          setUser(null);
         }
-      } else {
-        setIsAdmin(false);
+      } catch (error) {
+        console.error("Error in auth state change:", error);
+        setUser(null);
       }
-
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, []);
+    return unsubscribe;
+  }, [isFirebaseAvailable]);
 
+  // Sign in function
   const signIn = async (email: string, password: string) => {
+    if (!isFirebaseAvailable || !auth) {
+      console.error("Firebase auth not available");
+      return;
+    }
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
@@ -83,15 +119,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  const signUp = async (email: string, password: string) => {
+  // Sign up function
+  const signUp = async (email: string, password: string, name: string) => {
+    if (!isFirebaseAvailable || !auth || !db) {
+      console.error("Firebase not available");
+      return;
+    }
+
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Update profile with display name
+      await updateProfile(user, { displayName: name });
+
+      // Store user in Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        displayName: name,
+        role: "user",
+        createdAt: new Date(),
+      });
     } catch (error) {
       throw error;
     }
   };
 
+  // Logout function
   const logout = async () => {
+    if (!isFirebaseAvailable || !auth) {
+      console.error("Firebase auth not available");
+      return;
+    }
+
     try {
       await signOut(auth);
     } catch (error) {
@@ -99,11 +164,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const contextValue = {
+    user,
+    loading,
+    signIn,
+    signUp,
+    logout,
+    isAdmin,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{ user, isAdmin, loading, signIn, signUp, logout }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
-};
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
