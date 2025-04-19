@@ -47,22 +47,6 @@ const nextConfig = {
     maxInactiveAge: 1000 * 60 * 60,
     pagesBufferLength: 5,
   },
-
-  // Override specific paths
-  rewrites: async () => {
-    return [
-      {
-        source: "/(login|signup|reset-password)",
-        destination: "/_auth/:path*",
-        has: [
-          {
-            type: "header",
-            key: "x-middleware-rewrite",
-          },
-        ],
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;

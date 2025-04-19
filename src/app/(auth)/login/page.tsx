@@ -1,36 +1,32 @@
 export const dynamic = "force-dynamic";
-export const runtime = "edge";
 
-export default function LoginPage() {
+// This page renders a loading state and redirects to the login page
+export default function LoginLoaderPage() {
   return (
-    <>
-      <div
-        id="auth-container"
-        data-auth-type="login"
-        className="min-h-screen flex items-center justify-center"
-      >
-        <div className="p-12 text-center">
-          <div className="animate-pulse">
-            <div className="h-8 w-64 bg-gray-200 rounded mb-4 mx-auto"></div>
-            <div className="h-4 w-48 bg-gray-200 rounded mb-8 mx-auto"></div>
-            <div className="h-10 w-72 bg-gray-200 rounded mb-4 mx-auto"></div>
-            <div className="h-10 w-72 bg-gray-200 rounded mb-6 mx-auto"></div>
-            <div className="h-10 w-72 bg-emerald-100 rounded mb-4 mx-auto"></div>
-          </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="p-8 max-w-md w-full bg-white rounded-lg shadow-md">
+        <h1 className="text-2xl font-semibold text-center mb-6">Sign In</h1>
+        <p className="text-gray-600 text-center mb-8">
+          Please wait while we prepare your login page...
+        </p>
+
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+          <div className="h-10 bg-emerald-100 rounded"></div>
         </div>
-      </div>
 
-      <script src="/auth-loader.js" />
-
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
-            if (typeof window !== 'undefined' && window.initAuthClient) {
-              window.initAuthClient('login');
-            }
+        {/* Redirect script */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+            setTimeout(function() {
+              window.location.href = "/(regular-routes)/login";
+            }, 1000);
           `,
-        }}
-      />
-    </>
+          }}
+        />
+      </div>
+    </div>
   );
 }

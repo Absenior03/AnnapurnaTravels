@@ -27,25 +27,8 @@ window.initAuthClient = function (type) {
     </div>
   `;
 
-  // Dynamically load the appropriate client bundle
-  const script = document.createElement("script");
-  script.src = type === "login" ? "/login-client.js" : "/signup-client.js";
-  script.async = true;
-  script.onload = function () {
-    console.log("Auth client loaded successfully");
-  };
-  script.onerror = function () {
-    console.error("Failed to load auth client");
-    container.innerHTML = `
-      <div class="p-12 text-center text-red-500">
-        <h2 class="text-xl font-semibold mb-4">Error Loading Auth</h2>
-        <p>Please refresh the page to try again</p>
-        <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-emerald-600 text-white rounded">
-          Refresh
-        </button>
-      </div>
-    `;
-  };
-
-  document.body.appendChild(script);
+  // Redirect to the client-rendered page
+  setTimeout(function () {
+    window.location.href = type === "login" ? "/login" : "/signup";
+  }, 1500);
 };
