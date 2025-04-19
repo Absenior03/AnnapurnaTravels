@@ -2,7 +2,7 @@ import React, { useRef, useMemo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useScroll } from "@/context/ScrollContext";
-import SimplexNoise from "simplex-noise";
+import { createNoise2D } from "simplex-noise";
 
 interface TerrainProps {
   position?: [number, number, number];
@@ -31,7 +31,7 @@ export const Terrain: React.FC<TerrainProps> = ({
   // Generate terrain geometry with simplex noise
   const geometry = useMemo(() => {
     const geo = new THREE.PlaneGeometry(width, height, segments, segments);
-    const simplex = new SimplexNoise();
+    const noise2D = createNoise2D();
 
     // Generate height map
     const vertices = geo.attributes.position.array;
@@ -40,9 +40,9 @@ export const Terrain: React.FC<TerrainProps> = ({
       const y = vertices[i + 1];
 
       // Multi-layered noise for more natural terrain
-      const noise1 = simplex.noise2D(x * 0.01, y * 0.01) * amplitude;
-      const noise2 = simplex.noise2D(x * 0.05, y * 0.05) * amplitude * 0.3;
-      const noise3 = simplex.noise2D(x * 0.1, y * 0.1) * amplitude * 0.15;
+      const noise1 = noise2D(x * 0.01, y * 0.01) * amplitude;
+      const noise2 = noise2D(x * 0.05, y * 0.05) * amplitude * 0.3;
+      const noise3 = noise2D(x * 0.1, y * 0.1) * amplitude * 0.15;
 
       vertices[i + 2] = noise1 + noise2 + noise3;
     }

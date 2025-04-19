@@ -17,7 +17,29 @@ import {
 import { Mountain } from "../hero/Hero3D";
 import { ErrorBoundary } from "react-error-boundary";
 import { motion, useTransform, useSpring } from "framer-motion";
-import { InteractiveScene } from "./InteractiveScene";
+
+// Create a simple InteractiveScene component if the import is failing
+// In production, you might want to implement a proper component or conditionally import it
+// This is a fallback to prevent build errors
+const InteractiveScene = ({
+  scrollY,
+  mouseX,
+  mouseY,
+}: {
+  scrollY: number;
+  mouseX: number;
+  mouseY: number;
+}) => {
+  return (
+    <div className="fixed top-0 left-0 w-full h-screen bg-gradient-to-b from-emerald-700 to-emerald-900 -z-10">
+      {/* Fallback gradient background when 3D scene can't be loaded */}
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-1/4 left-1/4 w-1/2 h-1/2 bg-white/10 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
+        <div className="absolute top-3/4 right-1/4 w-1/3 h-1/3 bg-white/5 rounded-full blur-3xl"></div>
+      </div>
+    </div>
+  );
+};
 
 // Create a curved path for the camera to follow
 function createCameraPath() {

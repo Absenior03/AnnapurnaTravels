@@ -79,7 +79,7 @@ interface ButtonProps {
   animate?: boolean;
 }
 
-const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = ({
   children,
   href,
   type = "button",
