@@ -19,6 +19,7 @@
     "@/context": "./context"
   },
   "dependencies": {
+    "@babel/runtime": "^7.27.0",
     "firebase": "^9.23.0",
     "framer-motion": "^10.16.4",
     "module-alias": "^2.2.3",
@@ -32,6 +33,7 @@
     "react-toastify": "^9.1.3"
   },
   "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.26.10",
     "@babel/preset-react": "^7.26.3",
     "@babel/preset-typescript": "^7.27.0",
     "@types/node": "^20",
