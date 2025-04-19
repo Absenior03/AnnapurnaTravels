@@ -2,19 +2,107 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiMail,
   FiLock,
   FiUser,
   FiUserPlus,
   FiAlertCircle,
+  FiArrowLeft,
+  FiCheck,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 10,
+    transition: {
+      duration: 0.3,
+    },
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3,
+    },
+  },
+};
+
+// Premium input field component with animation
+const AnimatedInput = ({
+  id,
+  label,
+  type,
+  placeholder,
+  icon,
+  value,
+  onChange,
+  required = true,
+  autoComplete,
+  helpText,
+}) => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  return (
+    <motion.div variants={fadeIn} className="mb-6">
+      <label
+        htmlFor={id}
+        className="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {label}
+      </label>
+      <div
+        className={`relative transition-all duration-200 ${
+          isFocused ? "ring-2 ring-emerald-500 ring-opacity-50" : ""
+        }`}
+      >
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          {React.cloneElement(icon, {
+            className: `h-5 w-5 ${
+              isFocused ? "text-emerald-500" : "text-gray-400"
+            }`,
+          })}
+        </div>
+        <input
+          id={id}
+          name={id}
+          type={type}
+          autoComplete={autoComplete}
+          required={required}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className="block w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+          placeholder={placeholder}
+        />
+      </div>
+      {helpText && <p className="mt-1 text-xs text-gray-500">{helpText}</p>}
+    </motion.div>
+  );
+};
 
 export default function SignUpForm() {
   const [name, setName] = useState("");
@@ -23,6 +111,7 @@ export default function SignUpForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showSuccessState, setShowSuccessState] = useState(false);
   const router = useRouter();
   const { signUp, firebaseError } = useAuth();
 
@@ -57,8 +146,15 @@ export default function SignUpForm() {
     setIsSubmitting(true);
     try {
       await signUp(email, password, name);
-      toast.success("Account created successfully!");
-      router.push("/");
+
+      // Show success state before redirecting
+      setShowSuccessState(true);
+
+      // Redirect after a delay for animation
+      setTimeout(() => {
+        toast.success("Account created successfully!");
+        router.push("/");
+      }, 1500);
     } catch (error: any) {
       console.error("Signup error:", error);
 
@@ -80,153 +176,159 @@ export default function SignUpForm() {
           error.message || "Failed to create account. Please try again."
         );
       }
-    } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (showSuccessState) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex items-center justify-center px-4 py-12 bg-gradient-to-b from-gray-50 to-emerald-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full max-w-md"
+          >
+            <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+              <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FiCheck className="h-10 w-10 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                Account Created!
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Welcome to Annapurna Tours. You're being redirected to the
+                homepage.
+              </p>
+              <div className="w-full bg-gray-200 h-1.5 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-emerald-500 rounded-full"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 1.5 }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex-grow flex items-center justify-center px-4 py-12 bg-gray-50">
+      <div className="flex-grow flex items-center justify-center px-4 py-12 bg-gradient-to-b from-gray-50 to-emerald-50">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           className="w-full max-w-md"
         >
-          <div className="bg-white rounded-lg shadow-lg p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-800">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="text-center mb-8"
+            >
+              <motion.div variants={fadeIn} className="inline-block mb-6">
+                <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto">
+                  <FiUserPlus className="h-8 w-8 text-emerald-600" />
+                </div>
+              </motion.div>
+              <motion.h1
+                variants={fadeIn}
+                className="text-3xl font-bold text-gray-800 mb-2"
+              >
                 Create an Account
-              </h1>
-              <p className="text-gray-600 mt-2">
+              </motion.h1>
+              <motion.p variants={fadeIn} className="text-gray-600">
                 Join Annapurna Tours and start your adventure
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
             {/* Error message display */}
-            {errorMessage && (
-              <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                <div className="flex items-center">
-                  <FiAlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                  <span className="text-red-700">{errorMessage}</span>
-                </div>
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
+            <AnimatePresence>
+              {errorMessage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: "auto" }}
+                  exit={{ opacity: 0, y: -10, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r"
                 >
-                  Full Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiUser className="h-5 w-5 text-gray-400" />
+                  <div className="flex items-center">
+                    <FiAlertCircle className="h-5 w-5 text-red-500 mr-2 flex-shrink-0" />
+                    <span className="text-red-700">{errorMessage}</span>
                   </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    autoComplete="name"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="John Doe"
-                  />
-                </div>
-              </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Email Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiMail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="you@example.com"
-                  />
-                </div>
-              </div>
+            <motion.form
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              onSubmit={handleSubmit}
+              className="space-y-6"
+            >
+              <AnimatedInput
+                id="name"
+                label="Full Name"
+                type="text"
+                placeholder="John Doe"
+                icon={<FiUser />}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+              />
 
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="••••••••"
-                  />
-                </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Password must be at least 6 characters long
-                </p>
-              </div>
+              <AnimatedInput
+                id="email"
+                label="Email Address"
+                type="email"
+                placeholder="you@example.com"
+                icon={<FiMail />}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
 
-              <div>
-                <label
-                  htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiLock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    autoComplete="new-password"
-                    required
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="••••••••"
-                  />
-                </div>
-              </div>
+              <AnimatedInput
+                id="password"
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                icon={<FiLock />}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                helpText="Password must be at least 6 characters long"
+              />
 
-              <div className="flex items-center">
+              <AnimatedInput
+                id="confirmPassword"
+                label="Confirm Password"
+                type="password"
+                placeholder="••••••••"
+                icon={<FiLock />}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+
+              <motion.div variants={fadeIn} className="flex items-center">
                 <input
                   id="terms"
                   name="terms"
                   type="checkbox"
                   required
-                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 rounded transition-colors"
                 />
                 <label
                   htmlFor="terms"
@@ -235,25 +337,25 @@ export default function SignUpForm() {
                   I agree to the{" "}
                   <Link
                     href="#"
-                    className="font-medium text-emerald-600 hover:text-emerald-500"
+                    className="font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
                     Terms of Service
                   </Link>{" "}
                   and{" "}
                   <Link
                     href="#"
-                    className="font-medium text-emerald-600 hover:text-emerald-500"
+                    className="font-medium text-emerald-600 hover:text-emerald-700 transition-colors"
                   >
                     Privacy Policy
                   </Link>
                 </label>
-              </div>
+              </motion.div>
 
-              <div>
+              <motion.div variants={fadeIn}>
                 <button
                   type="submit"
                   disabled={isSubmitting || !!firebaseError}
-                  className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-md shadow-md text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 ease-in-out transform hover:-translate-y-0.5 active:translate-y-0"
                 >
                   {isSubmitting ? (
                     <span className="inline-flex items-center">
@@ -286,13 +388,13 @@ export default function SignUpForm() {
                     </span>
                   )}
                 </button>
-              </div>
-            </form>
+              </motion.div>
+            </motion.form>
 
-            <div className="mt-6">
+            <motion.div variants={fadeIn} className="mt-8">
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
+                  <div className="w-full border-t border-gray-200"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
                   <span className="px-2 bg-white text-gray-500">
@@ -304,7 +406,7 @@ export default function SignUpForm() {
               <div className="mt-6 grid grid-cols-1 gap-3">
                 <button
                   type="button"
-                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  className="w-full inline-flex justify-center py-2.5 px-4 border border-gray-200 rounded-md shadow-sm bg-white text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
                 >
                   <svg
                     className="h-5 w-5 mr-2"
@@ -328,20 +430,23 @@ export default function SignUpForm() {
                       fill="#EA4335"
                     />
                   </svg>
-                  Google
+                  Continue with Google
                 </button>
               </div>
-            </div>
+            </motion.div>
 
-            <p className="mt-8 text-center text-sm text-gray-600">
+            <motion.p
+              variants={fadeIn}
+              className="mt-8 text-center text-sm text-gray-600"
+            >
               Already have an account?{" "}
               <Link
                 href="/login"
-                className="font-medium text-emerald-600 hover:text-emerald-500"
+                className="font-medium text-emerald-600 hover:text-emerald-700 transition-colors inline-flex items-center"
               >
-                Sign in
+                <FiArrowLeft className="mr-1 h-3 w-3" /> Sign in
               </Link>
-            </p>
+            </motion.p>
           </div>
         </motion.div>
       </div>

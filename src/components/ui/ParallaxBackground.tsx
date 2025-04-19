@@ -1,59 +1,42 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 
 interface ParallaxBackgroundProps {
   imageUrl: string;
-  children?: React.ReactNode;
   overlayOpacity?: number;
-  className?: string;
   speed?: number;
+  className?: string;
+  children?: React.ReactNode;
 }
 
-export default function ParallaxBackground({
+const ParallaxBackground: React.FC<ParallaxBackgroundProps> = ({
   imageUrl,
-  children,
   overlayOpacity = 0.3,
+  speed = 0.2,
   className = "",
-  speed = 0.15,
-}: ParallaxBackgroundProps) {
+  children,
+}) => {
   const ref = useRef<HTMLDivElement>(null);
-  const [elementTop, setElementTop] = useState(0);
-  const [clientHeight, setClientHeight] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
 
-  // Get scroll progress and viewport height for parallax calculation
-  const { scrollY } = useScroll();
+  // Create smoother parallax effect with spring physics
+  const y = useSpring(
+    useTransform(scrollYProgress, [0, 1], ["0%", `${speed * 100}%`]),
+    { stiffness: 100, damping: 30, restDelta: 0.001 }
+  );
 
-  // Update element position when mounted/resized
+  // Better image loading
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const updatePosition = () => {
-      const rect = element.getBoundingClientRect();
-      setElementTop(rect.top + window.scrollY);
-      setClientHeight(window.innerHeight);
-    };
-
-    updatePosition();
-    window.addEventListener("resize", updatePosition);
-
-    // Pre-load the image
     const img = new Image();
     img.src = imageUrl;
-    img.onload = () => setImageLoaded(true);
-
-    return () => window.removeEventListener("resize", updatePosition);
+    img.onload = () => setIsLoaded(true);
   }, [imageUrl]);
-
-  // Calculate parallax transform value
-  const transformY = useTransform(
-    scrollY,
-    [elementTop - clientHeight, elementTop + clientHeight],
-    [`${-speed * 100}%`, `${speed * 100}%`]
-  );
 
   return (
     <div
@@ -61,34 +44,39 @@ export default function ParallaxBackground({
       className={`relative overflow-hidden ${className}`}
       style={{ willChange: "transform" }}
     >
-      {/* Background image with parallax effect */}
       <motion.div
-        style={{ y: transformY }}
-        className="absolute inset-0 z-0 h-[120%] top-[-10%]"
+        initial={{ opacity: 0, scale: 1.1 }}
+        animate={{
+          opacity: isLoaded ? 1 : 0,
+          scale: isLoaded ? 1 : 1.1,
+          y,
+        }}
+        transition={{
+          opacity: { duration: 0.8, ease: "easeOut" },
+          scale: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
+        }}
+        style={{ y }}
+        className="absolute inset-0 h-[110%] w-full"
       >
         <div
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat h-full w-full transition-opacity duration-500 ${
-            imageLoaded ? "opacity-100" : "opacity-0"
-          }`}
-          style={{ backgroundImage: `url('${imageUrl}')` }}
-        />
-
-        {/* Loading placeholder */}
-        <div
-          className={`absolute inset-0 bg-gray-300 animate-pulse transition-opacity duration-500 ${
-            imageLoaded ? "opacity-0" : "opacity-100"
-          }`}
+          className="h-full w-full bg-cover bg-center bg-no-repeat transform"
+          style={{
+            backgroundImage: `url(${imageUrl})`,
+            willChange: "transform",
+          }}
         />
       </motion.div>
 
-      {/* Optional overlay */}
+      {/* Improved overlay with slight gradient */}
       <div
-        className="absolute inset-0 bg-black z-10"
+        className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/50"
         style={{ opacity: overlayOpacity }}
       />
 
-      {/* Content */}
-      <div className="relative z-20 h-full">{children}</div>
+      {/* Content container */}
+      <div className="relative z-10 h-full w-full">{children}</div>
     </div>
   );
-}
+};
+
+export default ParallaxBackground;
