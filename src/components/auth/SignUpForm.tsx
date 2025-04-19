@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FiMail, FiLock, FiUser, FiUserPlus } from "react-icons/fi";
+import {
+  FiMail,
+  FiLock,
+  FiUser,
+  FiUserPlus,
+  FiAlertCircle,
+} from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -16,24 +22,35 @@ export default function SignUpForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const { signUp } = useAuth();
+  const { signUp, firebaseError } = useAuth();
+
+  // Set initial error if Firebase has initialization errors
+  useEffect(() => {
+    if (firebaseError) {
+      setErrorMessage(
+        "Authentication service is temporarily unavailable. Please try again later."
+      );
+    }
+  }, [firebaseError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
 
     if (!name || !email || !password || !confirmPassword) {
-      toast.error("Please fill in all fields");
+      setErrorMessage("Please fill in all fields");
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match");
+      setErrorMessage("Passwords do not match");
       return;
     }
 
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters long");
+      setErrorMessage("Password must be at least 6 characters long");
       return;
     }
 
@@ -44,11 +61,25 @@ export default function SignUpForm() {
       router.push("/");
     } catch (error: any) {
       console.error("Signup error:", error);
-      let errorMessage = "Failed to create account";
+
+      // Handle different error types with user-friendly messages
       if (error.code === "auth/email-already-in-use") {
-        errorMessage = "Email is already in use";
+        setErrorMessage("Email is already in use");
+      } else if (error.code === "auth/invalid-email") {
+        setErrorMessage("Please enter a valid email address");
+      } else if (error.code === "auth/weak-password") {
+        setErrorMessage(
+          "Password is too weak. Please use at least 6 characters."
+        );
+      } else if (error.code === "auth/network-request-failed") {
+        setErrorMessage(
+          "Network error. Please check your internet connection."
+        );
+      } else {
+        setErrorMessage(
+          error.message || "Failed to create account. Please try again."
+        );
       }
-      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -74,6 +105,16 @@ export default function SignUpForm() {
                 Join Annapurna Tours and start your adventure
               </p>
             </div>
+
+            {/* Error message display */}
+            {errorMessage && (
+              <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                <div className="flex items-center">
+                  <FiAlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                  <span className="text-red-700">{errorMessage}</span>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -211,7 +252,7 @@ export default function SignUpForm() {
               <div>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !!firebaseError}
                   className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (

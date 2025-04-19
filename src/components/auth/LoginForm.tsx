@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { FiMail, FiLock, FiUser, FiLogIn } from "react-icons/fi";
+import { FiMail, FiLock, FiUser, FiLogIn, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
@@ -14,14 +14,25 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signIn, firebaseError } = useAuth();
+
+  // Set initial error if Firebase has initialization errors
+  React.useEffect(() => {
+    if (firebaseError) {
+      setErrorMessage(
+        "Authentication service is temporarily unavailable. Please try again later."
+      );
+    }
+  }, [firebaseError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage(null);
 
     if (!email || !password) {
-      toast.error("Please fill in all fields");
+      setErrorMessage("Please fill in all fields");
       return;
     }
 
@@ -32,14 +43,24 @@ export default function LoginForm() {
       router.push("/");
     } catch (error: any) {
       console.error("Login error:", error);
-      let errorMessage = "Failed to log in";
+
+      // Handle different error types with user-friendly messages
       if (
         error.code === "auth/user-not-found" ||
         error.code === "auth/wrong-password"
       ) {
-        errorMessage = "Invalid email or password";
+        setErrorMessage("Invalid email or password");
+      } else if (error.code === "auth/too-many-requests") {
+        setErrorMessage(
+          "Too many failed login attempts. Please try again later or reset your password."
+        );
+      } else if (error.code === "auth/network-request-failed") {
+        setErrorMessage(
+          "Network error. Please check your internet connection."
+        );
+      } else {
+        setErrorMessage(error.message || "Failed to log in. Please try again.");
       }
-      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -63,6 +84,16 @@ export default function LoginForm() {
                 Sign in to access your account
               </p>
             </div>
+
+            {/* Error message display */}
+            {errorMessage && (
+              <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                <div className="flex items-center">
+                  <FiAlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                  <span className="text-red-700">{errorMessage}</span>
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
@@ -144,7 +175,7 @@ export default function LoginForm() {
               <div>
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !!firebaseError}
                   className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
