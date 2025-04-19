@@ -39,6 +39,12 @@ const ScrollScene = dynamic(
   { ssr: false }
 );
 
+// Import the MountainShowcase component with dynamic loading
+const MountainShowcase = dynamic(
+  () => import("@/components/3d/MountainShowcase"),
+  { ssr: false }
+);
+
 // Loading screen shown while the 3D scene is loading
 function LoadingScreen() {
   return (
@@ -155,6 +161,12 @@ export default function Home() {
         "Discover breathtaking landscapes, ancient cultures, and unforgettable experiences across South Asia's most beautiful regions.",
     },
     {
+      id: "mountains",
+      title: "Discover Our Destinations",
+      description:
+        "Explore majestic mountain landscapes across South Asia with our interactive 3D showcase.",
+    },
+    {
       id: "tours",
       title: "Featured Tours",
       description:
@@ -220,6 +232,19 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* Mountain Showcase Section */}
+          <section id="mountains" className="py-20 md:py-32 relative">
+            <Suspense
+              fallback={
+                <div className="h-96 flex items-center justify-center">
+                  <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+                </div>
+              }
+            >
+              <MountainShowcase />
+            </Suspense>
           </section>
 
           {/* Tours Section */}
