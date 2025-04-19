@@ -2,19 +2,11 @@ import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
-
-// Provide fallback values to prevent errors during development or when environment variables are missing
-const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "demo-api-key",
-  authDomain:
-    process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "demo-app.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-project",
-  storageBucket:
-    process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "demo-app.appspot.com",
-  messagingSenderId:
-    process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef",
-};
+import {
+  firebaseConfig,
+  isFirebaseConfigValid,
+  maskSensitiveValue,
+} from "@/lib/env";
 
 // Define a class to ensure Firebase is initialized only once
 class FirebaseClient {
@@ -25,17 +17,29 @@ class FirebaseClient {
   private _storage: FirebaseStorage | null = null;
   private _isInitialized: boolean = false;
   private _initError: Error | null = null;
+  private _isMockMode: boolean = false;
 
   constructor() {
     if (typeof window !== "undefined") {
       try {
-        // Check if we have valid Firebase config values - at minimum we need apiKey
-        if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+        // Check if we have valid Firebase config values
+        if (!isFirebaseConfigValid()) {
           console.warn(
-            "Firebase API key is missing, initializing in mock mode"
+            "Firebase configuration is incomplete. API key or project ID is missing."
           );
           this._isInitialized = false;
+          this._isMockMode = true;
+          this._initError = new Error("Firebase configuration is incomplete");
           return;
+        }
+
+        // Log masked API key for debugging (only in development)
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            `Initializing Firebase with API key: ${maskSensitiveValue(
+              firebaseConfig.apiKey
+            )}`
+          );
         }
 
         if (!getApps().length) {
@@ -48,6 +52,7 @@ class FirebaseClient {
         this._db = getFirestore(this.app);
         this._storage = getStorage(this.app);
         this._isInitialized = true;
+        this._isMockMode = false;
 
         console.log("Firebase initialized successfully");
       } catch (error) {
@@ -56,7 +61,12 @@ class FirebaseClient {
         console.error("Firebase initialization error:", error);
         console.warn("Firebase services will be mocked");
         this._isInitialized = false;
+        this._isMockMode = true;
       }
+    } else {
+      // Server-side initialization not supported
+      this._isInitialized = false;
+      this._isMockMode = true;
     }
   }
 
@@ -86,6 +96,10 @@ class FirebaseClient {
   get initError() {
     return this._initError;
   }
+
+  get isMockMode() {
+    return this._isMockMode;
+  }
 }
 
 // Only initialize client-side
@@ -107,3 +121,5 @@ export const isFirebaseInitialized =
   typeof window !== "undefined" ? firebase?.isInitialized : false;
 export const firebaseInitError =
   typeof window !== "undefined" ? firebase?.initError : null;
+export const isMockMode =
+  typeof window !== "undefined" ? firebase?.isMockMode : true;

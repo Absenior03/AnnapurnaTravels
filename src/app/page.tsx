@@ -115,7 +115,7 @@ export default function Home() {
           key={i}
           className={`${
             i < rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"
-          } w-4 h-4`}
+          } w-3 h-3`}
         />
       ))}
     </div>
@@ -124,15 +124,15 @@ export default function Home() {
   return (
     <>
       <Navbar />
-      <main>
+      <main className="text-sm">
         {/* Hero Section with Parallax */}
         <ParallaxBackground
           imageUrl={heroImage}
           overlayOpacity={0.5}
           speed={0.15}
-          className="h-[90vh] flex items-center justify-center"
+          className="h-[95vh] flex items-center justify-center"
         >
-          <div className="text-center px-4">
+          <div className="text-center px-6 w-full max-w-5xl mx-auto">
             <motion.div
               initial="hidden"
               animate="visible"
@@ -144,14 +144,14 @@ export default function Home() {
               <motion.h1
                 variants={fadeIn}
                 transition={{ duration: 0.8 }}
-                className="text-4xl md:text-6xl font-bold text-white mb-6 [text-shadow:_0_2px_10px_rgba(0,0,0,0.3)]"
+                className="text-3xl md:text-5xl font-bold text-white mb-8 [text-shadow:_0_2px_10px_rgba(0,0,0,0.3)]"
               >
                 Discover the Majesty of the Himalayas
               </motion.h1>
               <motion.p
                 variants={fadeIn}
                 transition={{ duration: 0.8 }}
-                className="text-xl md:text-2xl text-white max-w-3xl mx-auto mb-8 [text-shadow:_0_2px_5px_rgba(0,0,0,0.2)]"
+                className="text-lg md:text-xl text-white max-w-3xl mx-auto mb-10 [text-shadow:_0_2px_5px_rgba(0,0,0,0.2)]"
               >
                 Experience breathtaking adventures in the world's most
                 spectacular mountain range with expert local guides
@@ -159,18 +159,18 @@ export default function Home() {
               <motion.div
                 variants={fadeIn}
                 transition={{ duration: 0.8 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center"
+                className="flex flex-col sm:flex-row gap-6 justify-center"
               >
                 <Link
                   href="/tours"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-md font-semibold text-lg transition-colors inline-flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3.5 rounded-md font-semibold text-base transition-colors inline-flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
                 >
                   Explore Tours
                   <FiChevronRight className="ml-2" />
                 </Link>
                 <Link
                   href="/about"
-                  className="bg-transparent border-2 border-white text-white hover:bg-white/20 transition-colors px-8 py-3.5 rounded-md font-semibold text-lg inline-flex items-center"
+                  className="bg-transparent border-2 border-white text-white hover:bg-white/20 transition-colors px-8 py-3 rounded-md font-semibold text-base inline-flex items-center"
                 >
                   Learn More
                 </Link>
@@ -180,9 +180,9 @@ export default function Home() {
         </ParallaxBackground>
 
         {/* Stats Section */}
-        <section className="py-12 bg-emerald-700">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-white text-center">
+        <section className="py-16 bg-emerald-700">
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-white text-center">
               {stats.map((stat) => (
                 <motion.div
                   key={stat.id}
@@ -190,12 +190,12 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5 }}
-                  className="p-4"
+                  className="p-6"
                 >
-                  <div className="text-3xl md:text-4xl font-bold mb-2">
+                  <div className="text-2xl md:text-3xl font-bold mb-3">
                     {stat.value}
                   </div>
-                  <div className="text-emerald-200">{stat.label}</div>
+                  <div className="text-emerald-200 text-sm">{stat.label}</div>
                 </motion.div>
               ))}
             </div>
@@ -203,29 +203,29 @@ export default function Home() {
         </section>
 
         {/* Featured Tours Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
+        <section className="py-24 bg-gray-50">
+          <div className="container mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              className="text-center mb-20"
             >
-              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-medium mb-5">
                 Featured Experiences
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-5">
                 Popular Himalayan Adventures
               </h2>
-              <p className="text-gray-600 max-w-3xl mx-auto">
+              <p className="text-gray-600 max-w-3xl mx-auto text-sm">
                 Discover our most sought-after Himalayan experiences, carefully
                 curated to provide unforgettable adventures in the world's most
                 breathtaking mountains.
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
               {loading
                 ? // Loading skeletons
                   Array.from({ length: 3 }).map((_, i) => (
@@ -259,11 +259,11 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mt-12"
+              className="text-center mt-16"
             >
               <Link
                 href="/tours"
-                className="inline-flex items-center text-emerald-600 font-semibold hover:text-emerald-800 transition-colors bg-white py-3 px-6 rounded-md shadow-sm hover:shadow border border-emerald-100"
+                className="inline-flex items-center text-emerald-600 font-semibold hover:text-emerald-800 transition-colors bg-white py-3 px-6 rounded-md shadow-sm hover:shadow border border-emerald-100 text-sm"
               >
                 View All Tours
                 <FiArrowRight className="ml-2" />
@@ -273,7 +273,7 @@ export default function Home() {
         </section>
 
         {/* About Us Section with Parallax */}
-        <section className="relative py-20 overflow-hidden">
+        <section className="relative py-24 overflow-hidden">
           <motion.div style={{ y }} className="absolute inset-0 z-0">
             <div
               className="absolute inset-0 bg-cover bg-center"
@@ -285,27 +285,27 @@ export default function Home() {
             <div className="absolute inset-0 bg-emerald-900 opacity-80" />
           </motion.div>
 
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="container mx-auto px-6 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6 }}
               >
-                <span className="inline-block px-3 py-1 bg-emerald-200 text-emerald-800 rounded-full text-sm font-medium mb-4">
+                <span className="inline-block px-3 py-1 bg-emerald-200 text-emerald-800 rounded-full text-xs font-medium mb-5">
                   About Us
                 </span>
-                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                <h2 className="text-2xl md:text-3xl font-bold text-white mb-8">
                   Authentic Himalayan Adventures Since 2008
                 </h2>
-                <p className="text-white opacity-90 mb-6">
+                <p className="text-white opacity-90 mb-8 text-sm">
                   For over 15 years, Annapurna Tours has been the premier
                   provider of authentic Himalayan adventures. Our expert guides,
                   all locals with deep knowledge of the mountains, ensure safe
                   and unforgettable journeys through Nepal, Bhutan, and Tibet.
                 </p>
-                <p className="text-white opacity-90 mb-8">
+                <p className="text-white opacity-90 mb-10 text-sm">
                   We're committed to sustainable tourism that benefits local
                   communities while preserving the natural beauty and cultural
                   heritage of the Himalayas. When you travel with us, you're not
@@ -314,7 +314,7 @@ export default function Home() {
                 </p>
                 <Link
                   href="/about"
-                  className="inline-flex items-center bg-white text-emerald-700 px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors shadow-md"
+                  className="inline-flex items-center bg-white text-emerald-700 px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors shadow-md text-sm"
                 >
                   Learn More
                   <FiChevronRight className="ml-2" />
@@ -343,22 +343,22 @@ export default function Home() {
         </section>
 
         {/* Testimonials Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="container mx-auto px-4">
+        <section className="py-24 bg-gray-50">
+          <div className="container mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              className="text-center mb-20"
             >
-              <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium mb-5">
                 Testimonials
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-5">
                 What Our Travelers Say
               </h2>
-              <p className="text-gray-600 max-w-3xl mx-auto">
+              <p className="text-gray-600 max-w-3xl mx-auto text-sm">
                 Read about the experiences of travelers who have explored the
                 Himalayas with us.
               </p>
@@ -380,12 +380,12 @@ export default function Home() {
                           : 100,
                     }}
                     transition={{ duration: 0.5 }}
-                    className={`bg-white rounded-lg shadow-xl p-8 ${
+                    className={`bg-white rounded-lg shadow-xl p-10 ${
                       activeTestimonial === index ? "block" : "hidden"
                     }`}
                   >
-                    <div className="flex items-center mb-6">
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden mr-4">
+                    <div className="flex items-center mb-8">
+                      <div className="relative w-14 h-14 rounded-full overflow-hidden mr-5">
                         <Image
                           src={testimonial.image}
                           alt={testimonial.name}
@@ -394,25 +394,25 @@ export default function Home() {
                         />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg text-gray-800">
+                        <h3 className="font-bold text-base text-gray-800">
                           {testimonial.name}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500">
                           {testimonial.role}
                         </p>
-                        <div className="mt-1">
+                        <div className="mt-2">
                           <Stars rating={testimonial.rating} />
                         </div>
                       </div>
                     </div>
-                    <blockquote className="text-gray-600 italic mb-6">
+                    <blockquote className="text-gray-600 italic mb-8 text-sm">
                       "{testimonial.text}"
                     </blockquote>
                   </motion.div>
                 ))}
 
                 {/* Testimonial indicators */}
-                <div className="flex justify-center mt-6 space-x-2">
+                <div className="flex justify-center mt-8 space-x-3">
                   {testimonials.map((_, index) => (
                     <button
                       key={index}
@@ -432,29 +432,29 @@ export default function Home() {
         </section>
 
         {/* Why Choose Us Section */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-center mb-16"
+              className="text-center mb-20"
             >
-              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-4">
+              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium mb-5">
                 Our Advantages
               </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-5">
                 Why Choose Us
               </h2>
-              <p className="text-gray-600 max-w-3xl mx-auto">
+              <p className="text-gray-600 max-w-3xl mx-auto text-sm">
                 With decades of experience and a deep love for the Himalayas, we
                 provide unforgettable adventures with a commitment to safety,
                 authenticity, and sustainability.
               </p>
             </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
               {[
                 {
                   title: "Local Expertise",
@@ -462,7 +462,7 @@ export default function Home() {
                     "Our guides are local experts with deep knowledge of the terrain, culture, and history of the Himalayas.",
                   icon: (
                     <svg
-                      className="w-12 h-12 text-emerald-500 mb-4"
+                      className="w-10 h-10 text-emerald-500 mb-5"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -480,7 +480,7 @@ export default function Home() {
                     "We're committed to environmentally responsible practices and supporting local communities in all our operations.",
                   icon: (
                     <svg
-                      className="w-12 h-12 text-emerald-500 mb-4"
+                      className="w-10 h-10 text-emerald-500 mb-5"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -498,7 +498,7 @@ export default function Home() {
                     "With comprehensive safety protocols and highly trained guides, your wellbeing is our top priority on every adventure.",
                   icon: (
                     <svg
-                      className="w-12 h-12 text-emerald-500 mb-4"
+                      className="w-10 h-10 text-emerald-500 mb-5"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -517,13 +517,13 @@ export default function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-gray-50 p-8 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow"
+                  className="bg-gray-50 p-10 rounded-lg shadow-md text-center hover:shadow-lg transition-shadow"
                 >
                   <div className="flex justify-center">{feature.icon}</div>
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4">
                     {feature.title}
                   </h3>
-                  <p className="text-gray-600">{feature.description}</p>
+                  <p className="text-gray-600 text-sm">{feature.description}</p>
                 </motion.div>
               ))}
             </div>
@@ -531,14 +531,14 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-20 bg-emerald-700">
-          <div className="container mx-auto px-4 text-center">
+        <section className="py-24 bg-emerald-700">
+          <div className="container mx-auto px-6 text-center">
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="text-3xl md:text-4xl font-bold text-white mb-6"
+              className="text-2xl md:text-3xl font-bold text-white mb-8"
             >
               Ready for Your Himalayan Adventure?
             </motion.h2>
@@ -547,7 +547,7 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="text-emerald-100 max-w-3xl mx-auto mb-8 text-lg"
+              className="text-emerald-100 max-w-3xl mx-auto mb-10 text-base"
             >
               Join us for the journey of a lifetime. Browse our tours or contact
               us to create a custom itinerary tailored to your preferences.
@@ -557,17 +557,17 @@ export default function Home() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="flex flex-col sm:flex-row gap-6 justify-center"
             >
               <Link
                 href="/tours"
-                className="bg-white text-emerald-700 hover:bg-gray-100 transition-colors px-8 py-3 rounded-md font-semibold shadow-md hover:shadow-lg"
+                className="bg-white text-emerald-700 hover:bg-gray-100 transition-colors px-8 py-3 rounded-md font-semibold shadow-md hover:shadow-lg text-sm"
               >
                 Explore Tours
               </Link>
               <Link
                 href="/contact"
-                className="bg-transparent border-2 border-white text-white hover:bg-white/10 transition-colors px-8 py-3 rounded-md font-semibold"
+                className="bg-transparent border-2 border-white text-white hover:bg-white/10 transition-colors px-8 py-3 rounded-md font-semibold text-sm"
               >
                 Contact Us
               </Link>
@@ -575,7 +575,7 @@ export default function Home() {
           </div>
         </section>
 
-        <PexelsNotice className="bg-gray-100 py-4 text-center text-gray-500 text-sm" />
+        <PexelsNotice className="bg-gray-100 py-5 text-center text-gray-500 text-xs" />
       </main>
       <Footer />
     </>
