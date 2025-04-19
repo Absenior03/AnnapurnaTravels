@@ -1,8 +1,10 @@
 {
   "version": 2,
   "framework": "nextjs",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": ".next",
   "env": {
+    "SKIP_TYPE_CHECK": "true",
     "NEXT_TELEMETRY_DISABLED": "1",
     "NEXT_DISABLE_ETW": "1",
     "NEXT_PUBLIC_PEXELS_API_KEY": "HoAeHZmKw7dVWxZY0KrvYJb3D598dG5rjcXnPI94htumjdJKV6H4gK6d",

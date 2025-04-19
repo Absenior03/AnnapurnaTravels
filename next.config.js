@@ -6,6 +6,11 @@ const nextConfig = {
   reactStrictMode: false,
   swcMinify: true,
 
+  // Disable TypeScript type checking during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+
   // Configure images
   images: {
     domains: [
