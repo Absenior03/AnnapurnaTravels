@@ -8,10 +8,9 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "chmod +x build.sh && ./build.sh",
+    "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "prepare-deploy": "chmod +x fix-imports.sh && ./fix-imports.sh"
+    "lint": "next lint"
   },
   "_moduleAliases": {
     "@": "./src",
