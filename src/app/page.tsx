@@ -16,15 +16,25 @@ import {
 } from "react-icons/fi";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ParallaxBackground from "@/components/ui/ParallaxBackground";
 import TourCard from "@/components/ui/TourCard";
-import { getHeroImage } from "@/utils/pexels";
 import { getFeaturedTours } from "@/lib/tours";
 import { Tour } from "@/types";
 import PexelsNotice from "@/components/PexelsNotice";
 import StatCard from "@/components/common/StatCard";
 import TestimonialCard from "@/components/common/TestimonialCard";
 import AnimatedSection from "@/components/animations/AnimatedSection";
+import Hero3D from "@/components/hero/Hero3D";
+import dynamic from "next/dynamic";
+
+// Dynamically import the Hero3D component with no SSR
+const DynamicHero3D = dynamic(() => import("@/components/hero/Hero3D"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[95vh] flex items-center justify-center bg-gradient-to-b from-emerald-800 to-emerald-600">
+      <div className="text-white text-2xl">Loading 3D Experience...</div>
+    </div>
+  ),
+});
 
 // Testimonial data
 const testimonials = [
@@ -63,9 +73,6 @@ const stats = [
 ];
 
 export default function Home() {
-  const [heroImage, setHeroImage] = useState<string>(
-    "/images/hero-fallback.jpg"
-  );
   const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
@@ -74,10 +81,6 @@ export default function Home() {
   useEffect(() => {
     async function loadData() {
       try {
-        // Load hero image
-        const heroImg = await getHeroImage();
-        setHeroImage(heroImg.url);
-
         // Load featured tours
         const tours = await getFeaturedTours(3);
         setFeaturedTours(tours);
@@ -130,60 +133,8 @@ export default function Home() {
     <>
       <Navbar />
       <main className="text-sm">
-        {/* Hero Section with Parallax */}
-        <ParallaxBackground
-          imageUrl={heroImage}
-          overlayOpacity={0.5}
-          speed={0.15}
-          className="h-[95vh] flex items-center justify-center"
-        >
-          <div className="text-center px-6 w-full max-w-5xl mx-auto">
-            <motion.div
-              initial="hidden"
-              animate="visible"
-              variants={{
-                visible: { transition: { staggerChildren: 0.2 } },
-              }}
-              className="max-w-4xl mx-auto"
-            >
-              <motion.h1
-                variants={fadeIn}
-                transition={{ duration: 0.8 }}
-                className="text-3xl md:text-5xl font-bold text-white mb-8 [text-shadow:_0_2px_10px_rgba(0,0,0,0.3)]"
-              >
-                Discover South Asia
-              </motion.h1>
-              <motion.p
-                variants={fadeIn}
-                transition={{ duration: 0.8 }}
-                className="text-lg md:text-xl text-white max-w-3xl mx-auto mb-10 [text-shadow:_0_2px_5px_rgba(0,0,0,0.2)]"
-              >
-                Experience the breathtaking beauty of South Asia with our
-                immersive tours. From the majestic Himalayas to ancient temples,
-                lush valleys and vibrant cultures.
-              </motion.p>
-              <motion.div
-                variants={fadeIn}
-                transition={{ duration: 0.8 }}
-                className="flex flex-col sm:flex-row gap-6 justify-center"
-              >
-                <Link
-                  href="/tours"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3.5 rounded-md font-semibold text-base transition-colors inline-flex items-center shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all"
-                >
-                  Explore Tours
-                  <FiChevronRight className="ml-2" />
-                </Link>
-                <Link
-                  href="/about"
-                  className="bg-transparent border-2 border-white text-white hover:bg-white/20 transition-colors px-8 py-3 rounded-md font-semibold text-base inline-flex items-center"
-                >
-                  Learn More
-                </Link>
-              </motion.div>
-            </motion.div>
-          </div>
-        </ParallaxBackground>
+        {/* 3D Hero Section */}
+        <DynamicHero3D />
 
         {/* Stats Section */}
         <AnimatedSection className="py-16 bg-gray-50">
@@ -214,7 +165,7 @@ export default function Home() {
         </AnimatedSection>
 
         {/* Featured Tours Section */}
-        <AnimatedSection className="py-16">
+        <AnimatedSection className="py-16" id="tours">
           <div className="container mx-auto px-4">
             <h2 className="text-4xl font-bold text-center mb-4">
               Featured Tours
@@ -248,7 +199,7 @@ export default function Home() {
             <div className="mt-12 text-center">
               <Link
                 href="/tours"
-                className="inline-flex items-center space-x-2 text-primary hover:text-primary-dark font-semibold transition duration-300"
+                className="inline-flex items-center space-x-2 text-emerald-600 hover:text-emerald-800 font-semibold transition duration-300"
               >
                 <span>View All Tours</span>
                 <FiArrowRight />
@@ -287,7 +238,7 @@ export default function Home() {
                     onClick={() => setActiveTestimonial(index)}
                     className={`w-3 h-3 rounded-full transition-all duration-300 ${
                       activeTestimonial === index
-                        ? "bg-primary w-6"
+                        ? "bg-emerald-600 w-6"
                         : "bg-gray-300"
                     }`}
                     aria-label={`View testimonial ${index + 1}`}
@@ -299,7 +250,7 @@ export default function Home() {
         </AnimatedSection>
 
         {/* CTA Section */}
-        <AnimatedSection className="py-20 bg-primary text-white">
+        <AnimatedSection className="py-20 bg-emerald-700 text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-4xl font-bold mb-4">
               Ready for Your South Asian Adventure?
@@ -310,7 +261,7 @@ export default function Home() {
             </p>
             <Link
               href="/contact"
-              className="bg-white text-primary hover:bg-gray-100 font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transition duration-300"
+              className="bg-white text-emerald-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transition duration-300"
             >
               <span>Contact Us Today</span>
               <FiArrowRight />
