@@ -33,8 +33,7 @@ const nextConfig = {
 
   // Prevent static optimization of auth pages
   experimental: {
-    serverActions: true,
-    // Only use client components for auth pages
+    // Server actions are enabled by default in Next.js 14
     serverComponentsExternalPackages: ["react-dom", "react"],
   },
 

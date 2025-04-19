@@ -16,6 +16,14 @@ export const PUBLIC_ROUTES = [
   "/signup",
 ];
 
+// Define routes for authentication
+export const AUTH_ROUTES = [
+  "/(regular-routes)/login",
+  "/(regular-routes)/signup",
+  "/login",
+  "/signup",
+];
+
 // Check if a route is protected
 export const isProtectedRoute = (path: string): boolean => {
   return PROTECTED_ROUTES.some(
@@ -25,7 +33,9 @@ export const isProtectedRoute = (path: string): boolean => {
 
 // Check if a route is auth-related
 export const isAuthRoute = (path: string): boolean => {
-  return path === "/login" || path === "/signup" || path === "/reset-password";
+  return AUTH_ROUTES.some(
+    (route) => path === route || path.startsWith(`${route}/`)
+  );
 };
 
 // This will help with middleware or client-side auth redirects
