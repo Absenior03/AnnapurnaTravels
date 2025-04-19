@@ -2,16 +2,13 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import { SectionHeading } from "@/components/ui/SectionHeading";
+import SectionHeading from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { FiMap, FiCamera, FiHeart } from "react-icons/fi";
 
 // Dynamically import the 3D component with no SSR
 const MountainShowcase = dynamic(
-  () =>
-    import("@/components/3d/MountainShowcase").then((mod) => ({
-      default: mod.MountainShowcase,
-    })),
+  () => import("@/components/3d/MountainShowcase"),
   {
     ssr: false,
     loading: () => (
@@ -43,7 +40,7 @@ export default function ShowcasePage() {
             subtitle="Experience the world's most breathtaking mountains with expert guides"
             align="center"
             divider={true}
-            titleSize="xl"
+            titleSize="lg"
           />
 
           <div className="grid md:grid-cols-3 gap-8 mt-16">
@@ -80,50 +77,6 @@ export default function ShowcasePage() {
                 local communities throughout South Asia's mountain regions.
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Popular Treks Section */}
-      <section className="py-20 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <SectionHeading
-            title="Popular Mountain Treks"
-            subtitle="From the Himalayas to the Karakoram, experience the majesty of South Asia"
-            align="center"
-            divider={true}
-            titleSize="xl"
-            tag="Explore"
-            tagColor="blue"
-          />
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-16">
-            {popularTreks.map((trek, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl overflow-hidden shadow-lg"
-              >
-                <div
-                  className="h-64 bg-cover bg-center"
-                  style={{ backgroundImage: `url(${trek.image})` }}
-                />
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <h3 className="text-xl font-bold">{trek.name}</h3>
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {trek.duration}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mb-6">{trek.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-lg">${trek.price}</span>
-                    <Button variant="primary" size="sm">
-                      View Details
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </section>

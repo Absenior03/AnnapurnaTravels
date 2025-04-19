@@ -32,7 +32,7 @@ const CameraSetup = ({
   return <PerspectiveCamera makeDefault position={position} fov={fov} />;
 };
 
-export function SceneWrapper({
+function SceneWrapper({
   children,
   cameraPosition = [0, 2, 5],
   controls = true,

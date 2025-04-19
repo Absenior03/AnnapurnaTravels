@@ -18,7 +18,7 @@ interface CloudProps {
   noiseScale?: number;
 }
 
-export function Cloud({
+function Cloud({
   position,
   scale = 1,
   color = "#ffffff",

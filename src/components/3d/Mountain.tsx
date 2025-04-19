@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Vector3, ConeGeometry } from "three";
 import { useScrollContext } from "@/context/ScrollContext";
-import SimplexNoise from "simplex-noise";
+import { createNoise2D } from "simplex-noise";
 
 interface MountainProps {
   position: Vector3 | [number, number, number];
@@ -18,7 +18,7 @@ interface MountainProps {
   mouseY?: number;
 }
 
-export function Mountain({
+function Mountain({
   position,
   color = "#3b82f6",
   wireframe = false,
@@ -29,7 +29,7 @@ export function Mountain({
   mouseY = 0.5,
 }: MountainProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const simplex = useMemo(() => new SimplexNoise(), []);
+  const noise2D = useMemo(() => createNoise2D(), []);
 
   let scrollContext;
   try {
@@ -44,8 +44,8 @@ export function Mountain({
     const sizeY = Array.isArray(size) ? size[1] : size;
     const sizeZ = Array.isArray(size) ? size[2] : size;
 
-    return generateMountainGeometry(detail, sizeX, sizeY, sizeZ, simplex);
-  }, [size, detail, simplex]);
+    return generateMountainGeometry(detail, sizeX, sizeY, sizeZ, noise2D);
+  }, [size, detail, noise2D]);
 
   // Animation
   useFrame(({ clock }) => {
@@ -102,7 +102,7 @@ function generateMountainGeometry(
   sizeX: number,
   sizeY: number,
   sizeZ: number,
-  simplex: SimplexNoise
+  noise2D: (x: number, y: number) => number
 ) {
   // Create a cone geometry as base
   const geometry = new ConeGeometry(sizeX / 2, sizeY, detail, 1, true);
@@ -121,8 +121,7 @@ function generateMountainGeometry(
     if (y !== sizeY / 2) {
       const distance = Math.sqrt(x * x + z * z);
       const noise =
-        simplex.noise2D(x * 0.1, z * 0.1) * 0.2 +
-        simplex.noise2D(x * 0.01, z * 0.01) * 0.8;
+        noise2D(x * 0.1, z * 0.1) * 0.2 + noise2D(x * 0.01, z * 0.01) * 0.8;
 
       // Apply noise based on distance from center and height
       const noiseAmount = (1 - y / sizeY) * noise * sizeY * 0.2;

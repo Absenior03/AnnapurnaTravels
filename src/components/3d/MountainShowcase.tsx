@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, Suspense } from "react";
-import { SceneWrapper } from "./SceneWrapper";
-import { Mountain } from "./Mountain";
-import { Cloud } from "./Cloud";
+import SceneWrapper from "./SceneWrapper";
+import Mountain from "./Mountain";
+import Cloud from "./Cloud";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +13,7 @@ interface MountainShowcaseProps {
   className?: string;
 }
 
-export function MountainShowcase({ className = "" }: MountainShowcaseProps) {
+function MountainShowcase({ className = "" }: MountainShowcaseProps) {
   const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [isClient, setIsClient] = useState(false);
