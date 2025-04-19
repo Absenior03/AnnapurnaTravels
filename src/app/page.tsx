@@ -1,363 +1,370 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { FiArrowRight, FiMapPin, FiCalendar } from "react-icons/fi";
+import Image from "next/image";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { FiMapPin, FiCalendar, FiClock, FiChevronRight } from "react-icons/fi";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import ParallaxBackground from "@/components/ui/ParallaxBackground";
 import TourCard from "@/components/ui/TourCard";
-import ImageCarousel from "@/components/ui/ImageCarousel";
-import DynamicBackground from "@/components/ui/DynamicBackground";
-import DynamicParallaxBackground from "@/components/ui/DynamicParallaxBackground";
-import { useTours } from "@/hooks/useTours";
-import { getTravelImages } from "@/utils/pexels";
-import { PexelsImage } from "@/types";
-import { formatRupees } from "@/utils/razorpay";
+import { getHeroImage } from "@/utils/pexels";
+import { getFeaturedTours } from "@/lib/tours";
+import { Tour } from "@/types";
+import PexelsNotice from "@/components/PexelsNotice";
 
 export default function Home() {
-  const { featuredTours, upcomingTours, loading } = useTours();
-  const [heroImages, setHeroImages] = useState<string[]>([]);
-  const [isHeroLoading, setIsHeroLoading] = useState(true);
+  const [heroImage, setHeroImage] = useState<string>(
+    "/images/hero-fallback.jpg"
+  );
+  const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch hero images from Pexels
   useEffect(() => {
-    const fetchHeroImages = async () => {
+    async function loadData() {
       try {
-        setIsHeroLoading(true);
-        const images = await getTravelImages(5);
-        setHeroImages(images.map((img) => img.src.large));
-      } catch (error) {
-        console.error("Error fetching hero images:", error);
-        // Set default images if Pexels fails
-        setHeroImages([
-          "https://images.pexels.com/photos/1586298/pexels-photo-1586298.jpeg",
-          "https://images.pexels.com/photos/2387873/pexels-photo-2387873.jpeg",
-        ]);
-      } finally {
-        setIsHeroLoading(false);
-      }
-    };
+        // Load hero image
+        const heroImg = await getHeroImage();
+        setHeroImage(heroImg);
 
-    fetchHeroImages();
+        // Load featured tours
+        const tours = await getFeaturedTours(3);
+        setFeaturedTours(tours);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
   }, []);
 
-  // Placeholder reviews for the reviews section
-  const reviews = [
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      rating: 5,
-      comment:
-        "Absolutely amazing experience! The guides were knowledgeable and the views were breathtaking. Can't wait to book another tour with Annapurna.",
-      tour: "Annapurna Base Camp",
-      image: "https://randomuser.me/api/portraits/women/1.jpg",
-    },
-    {
-      id: "2",
-      name: "Michael Chen",
-      rating: 5,
-      comment:
-        "The Everest Base Camp trek was challenging but incredibly rewarding. Our guide was excellent and made sure everyone was safe and enjoying the journey.",
-      tour: "Everest Base Camp",
-      image: "https://randomuser.me/api/portraits/men/2.jpg",
-    },
-    {
-      id: "3",
-      name: "Emily Rodriguez",
-      rating: 4,
-      comment:
-        "Beautiful scenery and well-organized itinerary. The accommodation was better than I expected for such remote locations.",
-      tour: "Langtang Valley",
-      image: "https://randomuser.me/api/portraits/women/3.jpg",
-    },
-  ];
-
-  // Convert hero images to the format needed for ParallaxHero
-  const parallaxImages =
-    !isHeroLoading && heroImages.length > 0
-      ? heroImages.map((url, index) => ({
-          url,
-          speed: 0.2 + index * 0.15, // Increased speed values for more dramatic effect
-        }))
-      : [
-          {
-            url: "https://images.pexels.com/photos/1586298/pexels-photo-1586298.jpeg",
-            speed: 0.3,
-          },
-        ];
+  // Parallax scrolling effect reference
+  const { scrollYProgress } = useScroll();
+  const y = useTransform(scrollYProgress, [0, 1], [0, 200]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <>
       <Navbar />
-
-      {/* Hero Section with Dynamic Parallax Background */}
-      <DynamicParallaxBackground
-        className="h-[80vh] flex items-center justify-center"
-        colorFrom="#065f46"
-        colorTo="#115e59"
-        overlayOpacity={0.5}
-        parallaxImages={parallaxImages}
-      >
-        <div className="h-full flex items-center">
-          <div className="container mx-auto px-6 md:px-12">
+      <main>
+        {/* Hero Section with Parallax */}
+        <ParallaxBackground
+          imageUrl={heroImage}
+          overlayOpacity={0.5}
+          speed={0.15}
+          className="h-[80vh] flex items-center justify-center"
+        >
+          <div className="text-center px-4">
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-4xl md:text-6xl font-bold text-white mb-6"
+            >
+              Discover the Himalayas
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="text-xl md:text-2xl text-white max-w-3xl mx-auto mb-8"
+            >
+              Experience breathtaking adventures in the world's most majestic
+              mountain range
+            </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.8 }}
-              className="max-w-3xl"
+              transition={{ duration: 0.8, delay: 0.4 }}
             >
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
-                Experience the Majesty of the&nbsp;Himalayas
-              </h1>
-              <p className="text-xl text-white mb-8">
-                Discover breathtaking landscapes, ancient cultures, and
-                unforgettable adventures with our expert-guided tours.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/tours"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-md font-medium text-lg transition-colors inline-flex items-center justify-center"
-                >
-                  Explore Tours <FiArrowRight className="ml-2" />
-                </Link>
-                <Link
-                  href="/about"
-                  className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white border border-white/30 px-6 py-3 rounded-md font-medium text-lg transition-colors inline-flex items-center justify-center"
-                >
-                  About Us
-                </Link>
-              </div>
+              <Link
+                href="/tours"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-md font-semibold text-lg transition-colors inline-flex items-center"
+              >
+                Explore Tours
+                <FiChevronRight className="ml-2" />
+              </Link>
             </motion.div>
           </div>
-        </div>
+        </ParallaxBackground>
 
-        {/* Custom animated scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden md:block">
-          <motion.div
-            animate={{
-              y: [0, 12, 0],
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              repeatType: "loop",
-            }}
-            className="w-6 h-10 rounded-full border-2 border-white/50 flex justify-center pt-2"
-          >
-            <motion.div className="w-1.5 h-1.5 rounded-full bg-white" />
-          </motion.div>
-        </div>
-      </DynamicParallaxBackground>
+        {/* Featured Tours Section */}
+        <section className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-12"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                Featured Tours
+              </h2>
+              <p className="text-gray-600 max-w-3xl mx-auto">
+                Discover our most popular Himalayan adventures, carefully
+                curated to provide unforgettable experiences in the world's most
+                breathtaking mountains.
+              </p>
+            </motion.div>
 
-      {/* Featured Tours Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-6 tracking-tight">
-              Featured Tours
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Our most popular and highly-rated tours that showcase the best of
-              the Himalayas.
-            </p>
-          </div>
-
-          {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-lg shadow-md h-64 animate-pulse"
-                />
-              ))}
-            </div>
-          ) : (
-            <>
-              {featuredTours.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {featuredTours.slice(0, 3).map((tour) => (
-                    <TourCard key={tour.id} tour={tour} />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">
-                    No featured tours available at the moment.
-                  </p>
-                </div>
-              )}
-
-              <div className="text-center mt-10">
-                <Link
-                  href="/tours"
-                  className="inline-flex items-center bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
-                >
-                  View All Tours <FiArrowRight className="ml-2" />
-                </Link>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Upcoming Tours Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">
-              Upcoming Tours
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Don't miss your chance to join these adventures departing soon.
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="animate-pulse space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-gray-100 rounded-lg p-4 h-24" />
-              ))}
-            </div>
-          ) : (
-            <>
-              {upcomingTours.length > 0 ? (
-                <div className="space-y-4">
-                  {upcomingTours.slice(0, 3).map((tour) => (
-                    <Link
-                      key={tour.id}
-                      href={`/tours/${tour.id}`}
-                      className="block bg-gray-50 hover:bg-gray-100 rounded-lg p-4 transition-colors"
-                    >
-                      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-                        <div className="w-full md:w-24 h-24 rounded-lg overflow-hidden">
-                          <img
-                            src={tour.imageUrls[0]}
-                            alt={tour.title}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h3 className="font-bold text-lg text-gray-800">
-                            {tour.title}
-                          </h3>
-                          <div className="flex flex-wrap gap-4 mt-2">
-                            <div className="flex items-center text-gray-600">
-                              <FiMapPin className="h-4 w-4 mr-1 text-emerald-500" />
-                              <span className="text-sm">{tour.location}</span>
-                            </div>
-                            <div className="flex items-center text-gray-600">
-                              <FiCalendar className="h-4 w-4 mr-1 text-emerald-500" />
-                              <span className="text-sm">
-                                {new Date(
-                                  tour.departureDate
-                                ).toLocaleDateString("en-US", {
-                                  year: "numeric",
-                                  month: "short",
-                                  day: "numeric",
-                                })}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="mt-2 md:mt-0">
-                          <span className="font-bold text-emerald-600 text-xl">
-                            {formatRupees(tour.price)}
-                          </span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-500">
-                    No upcoming tours available at the moment.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
-
-      {/* Reviews Section */}
-      <section className="py-16 bg-emerald-50">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">
-              What Our Travelers Say
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Hear from those who have experienced our tours firsthand.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {reviews.map((review) => (
-              <motion.div
-                key={review.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-                className="bg-white p-6 rounded-lg shadow-md"
-              >
-                <div className="flex items-center mb-4">
-                  <img
-                    src={review.image}
-                    alt={review.name}
-                    className="w-12 h-12 rounded-full mr-4"
-                  />
-                  <div>
-                    <h3 className="font-semibold text-gray-800">
-                      {review.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">{review.tour}</p>
-                  </div>
-                </div>
-                <div className="flex mb-3">
-                  {[...Array(5)].map((_, i) => (
-                    <svg
+              {loading
+                ? // Loading skeletons
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div
                       key={i}
-                      className={`h-5 w-5 ${
-                        i < review.rating ? "text-yellow-400" : "text-gray-300"
-                      }`}
+                      className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse"
+                    >
+                      <div className="h-64 bg-gray-300"></div>
+                      <div className="p-6">
+                        <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
+                        <div className="h-4 bg-gray-300 rounded w-full mb-2"></div>
+                        <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                      </div>
+                    </div>
+                  ))
+                : featuredTours.map((tour) => (
+                    <motion.div
+                      key={tour.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      <TourCard tour={tour} />
+                    </motion.div>
+                  ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mt-12"
+            >
+              <Link
+                href="/tours"
+                className="inline-flex items-center text-emerald-600 font-semibold hover:text-emerald-800 transition-colors"
+              >
+                View All Tours
+                <FiChevronRight className="ml-1" />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* About Us Section with Parallax */}
+        <section className="relative py-20 overflow-hidden">
+          <motion.div style={{ y }} className="absolute inset-0 z-0">
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage:
+                  "url('https://images.pexels.com/photos/4534200/pexels-photo-4534200.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260')",
+              }}
+            />
+            <div className="absolute inset-0 bg-emerald-900 opacity-80" />
+          </motion.div>
+
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
+                  About Annapurna Tours
+                </h2>
+                <p className="text-white opacity-90 mb-6">
+                  For over 15 years, Annapurna Tours has been the premier
+                  provider of authentic Himalayan adventures. Our expert guides,
+                  all locals with deep knowledge of the mountains, ensure safe
+                  and unforgettable journeys through Nepal, Bhutan, and Tibet.
+                </p>
+                <p className="text-white opacity-90 mb-8">
+                  We're committed to sustainable tourism that benefits local
+                  communities while preserving the natural beauty and cultural
+                  heritage of the Himalayas. When you travel with us, you're not
+                  just a tourist—you're a responsible traveler making a positive
+                  impact.
+                </p>
+                <Link
+                  href="/about"
+                  className="inline-flex items-center bg-white text-emerald-700 px-6 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors"
+                >
+                  Learn More
+                  <FiChevronRight className="ml-2" />
+                </Link>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="relative h-[500px] rounded-lg overflow-hidden shadow-xl"
+              >
+                <Image
+                  src="https://images.pexels.com/photos/2662116/pexels-photo-2662116.jpeg?auto=compress&cs=tinysrgb&h=750&w=1260"
+                  alt="Himalayan guides"
+                  fill
+                  className="object-cover"
+                />
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* Why Choose Us Section */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+                Why Choose Us
+              </h2>
+              <p className="text-gray-600 max-w-3xl mx-auto">
+                With decades of experience and a deep love for the Himalayas, we
+                provide unforgettable adventures with a commitment to safety,
+                authenticity, and sustainability.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                {
+                  title: "Local Expertise",
+                  description:
+                    "Our guides are local experts with deep knowledge of the terrain, culture, and history of the Himalayas.",
+                  icon: (
+                    <svg
+                      className="w-12 h-12 text-emerald-500 mb-4"
                       fill="currentColor"
                       viewBox="0 0 20 20"
-                      xmlns="http://www.w3.org/2000/svg"
                     >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      <path
+                        fillRule="evenodd"
+                        d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                        clipRule="evenodd"
+                      />
                     </svg>
-                  ))}
-                </div>
-                <p className="text-gray-600 italic">"{review.comment}"</p>
-              </motion.div>
-            ))}
+                  ),
+                },
+                {
+                  title: "Sustainable Tourism",
+                  description:
+                    "We're committed to environmentally responsible practices and supporting local communities in all our operations.",
+                  icon: (
+                    <svg
+                      className="w-12 h-12 text-emerald-500 mb-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M4.632 3.632A9 9 0 116.414 15.414l.707.707a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L6.414 10A7 7 0 104.632 5.512a1 1 0 011.73-1L8 7.732l2.732-2.732a1 1 0 011.414 0l3.535 3.536a1 1 0 010 1.414L13.95 12.68a1 1 0 01-1.414 0L10 10.148 6.364 13.78a1 1 0 01-1.414 0l-1.731-1.73a1 1 0 011.414-1.414L6 12.005l2.768-2.768-4.136-4.136z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ),
+                },
+                {
+                  title: "Safety First",
+                  description:
+                    "With comprehensive safety protocols and highly trained guides, your wellbeing is our top priority on every adventure.",
+                  icon: (
+                    <svg
+                      className="w-12 h-12 text-emerald-500 mb-4"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ),
+                },
+              ].map((feature, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-gray-50 p-8 rounded-lg shadow-md text-center"
+                >
+                  <div className="flex justify-center">{feature.icon}</div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-emerald-700 text-white">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">
-            Ready for Your Next Adventure?
-          </h2>
-          <p className="text-lg text-emerald-100 mb-8 max-w-2xl mx-auto">
-            Join us on a journey through the magnificent Himalayas. Book your
-            tour today and create memories that will last a lifetime.
-          </p>
-          <Link
-            href="/tours"
-            className="bg-white text-emerald-700 hover:bg-emerald-50 px-8 py-3 rounded-md font-medium text-lg transition-colors inline-flex items-center"
-          >
-            Browse Tours <FiArrowRight className="ml-2" />
-          </Link>
-        </div>
-      </section>
+        {/* CTA Section */}
+        <section className="py-20 bg-emerald-700">
+          <div className="container mx-auto px-4 text-center">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl md:text-4xl font-bold text-white mb-6"
+            >
+              Ready for Your Himalayan Adventure?
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-emerald-100 max-w-3xl mx-auto mb-8 text-lg"
+            >
+              Join us for the journey of a lifetime. Browse our tours or contact
+              us to create a custom itinerary tailored to your preferences.
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center"
+            >
+              <Link
+                href="/tours"
+                className="bg-white text-emerald-700 hover:bg-gray-100 transition-colors px-8 py-3 rounded-md font-semibold"
+              >
+                Explore Tours
+              </Link>
+              <Link
+                href="/contact"
+                className="bg-transparent border-2 border-white text-white hover:bg-white/10 transition-colors px-8 py-3 rounded-md font-semibold"
+              >
+                Contact Us
+              </Link>
+            </motion.div>
+          </div>
+        </section>
 
+        <PexelsNotice className="bg-gray-100 py-4 text-center text-gray-500 text-sm" />
+      </main>
       <Footer />
-    </div>
+    </>
   );
 }

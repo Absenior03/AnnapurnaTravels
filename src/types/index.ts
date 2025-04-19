@@ -2,49 +2,50 @@ export interface Tour {
   id: string;
   title: string;
   description: string;
-  itinerary: string[];
-  price: number;
+  fullDescription: string;
   duration: number;
-  departureDate: string;
-  highlights: string[];
-  featured: boolean;
+  difficulty: "easy" | "moderate" | "challenging";
+  price: number;
   location: string;
-  maxGroupSize: number;
-  difficulty: 'easy' | 'moderate' | 'challenging';
-  imageUrls: string[];
-  createdAt: any;
-  updatedAt: any;
+  image: string;
+  gallery: string[];
+  itinerary: ItineraryDay[];
+  includes: string[];
+  excludes: string[];
+  featured?: boolean;
+  createdAt?: string;
 }
 
 export interface User {
   uid: string;
   email: string;
   displayName: string | null;
-  photoURL: string | null;
-  role: 'user' | 'admin';
+  photoURL?: string | null;
+  role: "admin" | "user";
 }
 
 export interface Booking {
   id: string;
   userId: string;
+  userName: string;
+  userEmail: string;
   tourId: string;
-  tour: Tour;
-  numberOfPeople: number;
-  totalAmount: number;
-  status: 'pending' | 'confirmed' | 'cancelled';
-  paymentId: string;
-  createdAt: any;
+  tourTitle: string;
+  bookingDate: string;
+  amount: number;
+  paymentId?: string;
+  status: "pending" | "confirmed" | "cancelled";
+  createdAt: string;
 }
 
 export interface Review {
   id: string;
   userId: string;
+  userName: string;
   tourId: string;
   rating: number;
   comment: string;
-  userName: string;
-  userPhoto?: string;
-  createdAt: any;
+  createdAt: string;
 }
 
 export interface PexelsImage {
@@ -74,4 +75,10 @@ export type NavigationItem = {
   name: string;
   href: string;
   current: boolean;
-}; 
+};
+
+export interface ItineraryDay {
+  day: number;
+  title: string;
+  description: string;
+}

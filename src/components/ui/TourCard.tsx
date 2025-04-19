@@ -1,11 +1,10 @@
 "use client";
 
-import Image from "next/image";
+import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { MdLocationOn, MdTimer, MdCalendarMonth } from "react-icons/md";
-import { FaHiking } from "react-icons/fa";
-import React, { useState } from "react";
+import { FiMapPin, FiCalendar, FiClock, FiChevronRight } from "react-icons/fi";
 import { Tour } from "@/types";
 import { formatRupees } from "@/utils/razorpay";
 
@@ -14,117 +13,53 @@ interface TourCardProps {
 }
 
 export default function TourCard({ tour }: TourCardProps) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  // Format date to readable format
-  const formattedDate = new Date(tour.departureDate).toLocaleDateString(
-    "en-US",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    }
-  );
-
-  const nextImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === tour.imageUrls.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? tour.imageUrls.length - 1 : prev - 1
-    );
-  };
-
-  // Extract carousel controls into a separate client component
-  const ImageControls = () => {
-    if (tour.imageUrls.length <= 1) return null;
-
-    return (
-      <>
-        <button
-          onClick={prevImage}
-          className="absolute left-2 top-1/2 -mt-4 bg-black/30 hover:bg-black/50 text-white rounded-full p-1 z-10"
-        >
-          &#10094;
-        </button>
-        <button
-          onClick={nextImage}
-          className="absolute right-2 top-1/2 -mt-4 bg-black/30 hover:bg-black/50 text-white rounded-full p-1 z-10"
-        >
-          &#10095;
-        </button>
-      </>
-    );
-  };
-
   return (
-    <motion.div
-      className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      whileHover={{
-        scale: 1.02,
-        transition: { duration: 0.2 },
-      }}
-    >
-      <div className="relative h-48 w-full">
-        <div className="absolute inset-0">
-          <Image
-            src={tour.imageUrls[currentImageIndex]}
-            alt={tour.title}
-            fill
-            className="object-cover"
-          />
+    <div className="bg-white rounded-lg shadow-md overflow-hidden h-full transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="relative h-64">
+        <Image
+          src={tour.image}
+          alt={tour.title}
+          fill
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/60"></div>
+        <div className="absolute bottom-0 left-0 p-4">
+          <span className="inline-block bg-emerald-600 text-white text-xs font-semibold px-2 py-1 rounded-md">
+            {tour.difficulty.charAt(0).toUpperCase() + tour.difficulty.slice(1)}
+          </span>
         </div>
-
-        <ImageControls />
+        <div className="absolute bottom-0 right-0 p-4">
+          <span className="inline-block bg-white/90 backdrop-blur-sm text-emerald-700 text-sm font-bold px-3 py-1 rounded-md">
+            {formatRupees(tour.price)}
+          </span>
+        </div>
       </div>
 
-      <div className="p-4">
-        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+      <div className="p-5">
+        <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-1">
           {tour.title}
         </h3>
+        <p className="text-gray-600 mb-4 line-clamp-2">{tour.description}</p>
 
-        <div className="flex items-center text-gray-600 mb-2">
-          <MdLocationOn className="mr-1" />
-          <span>{tour.location}</span>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className="flex items-center text-gray-600">
-            <MdTimer className="mr-1" />
+        <div className="flex flex-wrap text-sm text-gray-500 gap-y-2 mb-5">
+          <div className="w-full sm:w-1/2 flex items-center">
+            <FiMapPin className="text-emerald-500 mr-2" />
+            <span>{tour.location}</span>
+          </div>
+          <div className="w-full sm:w-1/2 flex items-center">
+            <FiCalendar className="text-emerald-500 mr-2" />
             <span>{tour.duration} days</span>
           </div>
-
-          <div className="flex items-center text-gray-600">
-            <MdCalendarMonth className="mr-1" />
-            <span>{formattedDate}</span>
-          </div>
-
-          <div className="flex items-center text-gray-600">
-            <FaHiking className="mr-1" />
-            <span>{tour.difficulty}</span>
-          </div>
-
-          <div className="flex items-center font-semibold text-emerald-600">
-            {formatRupees(tour.price)}
-          </div>
         </div>
 
-        <Link href={`/tours/${tour.id}`} className="block">
-          <motion.div
-            className="bg-emerald-600 text-white py-2 px-4 rounded text-center hover:bg-emerald-700 transition-colors duration-300"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            View Details
-          </motion.div>
+        <Link
+          href={`/tours/${tour.id}`}
+          className="block w-full bg-gray-50 hover:bg-gray-100 transition-colors text-center text-emerald-700 font-medium py-2 rounded-md border border-gray-200 mt-auto flex items-center justify-center"
+        >
+          View Details
+          <FiChevronRight className="ml-1" />
         </Link>
       </div>
-    </motion.div>
+    </div>
   );
 }

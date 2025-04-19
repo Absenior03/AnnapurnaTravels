@@ -18,16 +18,32 @@ import {
 import { db } from "@/lib/firebase";
 import { Tour } from "@/types";
 import { getLocationImages } from "@/utils/pexels";
+import { getAllTours, getFeaturedTours } from "@/lib/tours";
 
 // Cache for tour data to prevent unnecessary fetches
 const tourCache = new Map<string, Tour>();
 
-export const useTours = () => {
+interface UseToursReturn {
+  tours: Tour[];
+  featuredTours: Tour[];
+  upcomingTours: Tour[];
+  loading: boolean;
+  error: Error | null;
+  fetchTours: () => Promise<void>;
+  fetchTourById: (id: string) => Promise<Tour | null>;
+  addTour: (
+    tourData: Omit<Tour, "id" | "createdAt" | "updatedAt" | "imageUrls">
+  ) => Promise<Tour>;
+  updateTour: (id: string, tourData: Partial<Tour>) => Promise<boolean>;
+  deleteTour: (id: string) => Promise<boolean>;
+}
+
+export function useTours(): UseToursReturn {
   const [tours, setTours] = useState<Tour[]>([]);
   const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
   const [upcomingTours, setUpcomingTours] = useState<Tour[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
   const fetchInProgress = useRef(new Map<string, Promise<Tour | null>>());
 
   // Fetch all tours
@@ -69,7 +85,7 @@ export const useTours = () => {
       setError(null);
     } catch (err) {
       console.error("Error fetching tours:", err);
-      setError("Failed to load tours.");
+      setError(err as Error);
     } finally {
       setLoading(false);
     }
@@ -104,12 +120,12 @@ export const useTours = () => {
             tourCache.set(id, tourData);
             return tourData;
           } else {
-            setError("Tour not found");
+            setError(new Error("Tour not found"));
             return null;
           }
         } catch (err) {
           console.error("Error fetching tour:", err);
-          setError("Failed to load tour.");
+          setError(err as Error);
           return null;
         } finally {
           // Remove from in-progress map
@@ -176,7 +192,7 @@ export const useTours = () => {
         return { id: docRef.id, ...tourWithTimestamp };
       } catch (err) {
         console.error("Error adding tour:", err);
-        setError("Failed to add tour.");
+        setError(err as Error);
         throw err;
       }
     },
@@ -204,7 +220,7 @@ export const useTours = () => {
         return true;
       } catch (err) {
         console.error("Error updating tour:", err);
-        setError("Failed to update tour.");
+        setError(err as Error);
         throw err;
       }
     },
@@ -227,7 +243,7 @@ export const useTours = () => {
         return true;
       } catch (err) {
         console.error("Error deleting tour:", err);
-        setError("Failed to delete tour.");
+        setError(err as Error);
         throw err;
       }
     },
@@ -251,4 +267,4 @@ export const useTours = () => {
     updateTour,
     deleteTour,
   };
-};
+}
