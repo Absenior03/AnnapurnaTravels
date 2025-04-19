@@ -14,8 +14,8 @@ import {
 } from "@react-three/drei";
 import * as THREE from "three";
 
-// Simplified Mountain component
-function Mountain({
+// Export Mountain component for reuse in ScrollScene
+export function Mountain({
   position,
   color,
   scale = 1,
@@ -126,10 +126,46 @@ function SceneTitle() {
   );
 }
 
-// Main scene component
+// Main scene component with mouse movement
 function Scene() {
   const [isNight, setIsNight] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Track mouse position
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      // Convert mouse position to normalized coordinates (-1 to 1)
+      mouseRef.current = {
+        x: (e.clientX / window.innerWidth) * 2 - 1,
+        y: -(e.clientY / window.innerHeight) * 2 + 1,
+      };
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  // Apply mouse movement to scene
+  useFrame(() => {
+    if (!groupRef.current) return;
+
+    // Smooth follow of mouse
+    groupRef.current.rotation.y = THREE.MathUtils.lerp(
+      groupRef.current.rotation.y,
+      mouseRef.current.x * 0.1,
+      0.05
+    );
+    groupRef.current.rotation.x = THREE.MathUtils.lerp(
+      groupRef.current.rotation.x,
+      mouseRef.current.y * 0.05,
+      0.05
+    );
+  });
 
   // Change between day and night every 10 seconds
   useEffect(() => {
@@ -186,15 +222,41 @@ function Scene() {
       {/* Sun/Moon */}
       <SunMoon isNight={isNight} />
 
-      {/* Mountains - reduced quantity for better performance */}
-      <Mountain position={[-4, -2, -6]} color="#4ca58f" scale={1.8} index={0} />
-      <Mountain position={[-1, -2, -4]} color="#2d6a4f" scale={2.2} index={1} />
-      <Mountain position={[3, -2, -5]} color="#1b4332" scale={1.6} index={2} />
-      <Mountain position={[6, -2, -7]} color="#081c15" scale={2.0} index={3} />
+      {/* Group that responds to mouse movement */}
+      <group ref={groupRef}>
+        {/* Mountains - reduced quantity for better performance */}
+        <Mountain
+          position={[-4, -2, -6]}
+          color="#4ca58f"
+          scale={1.8}
+          index={0}
+        />
+        <Mountain
+          position={[-1, -2, -4]}
+          color="#2d6a4f"
+          scale={2.2}
+          index={1}
+        />
+        <Mountain
+          position={[3, -2, -5]}
+          color="#1b4332"
+          scale={1.6}
+          index={2}
+        />
+        <Mountain
+          position={[6, -2, -7]}
+          color="#081c15"
+          scale={2.0}
+          index={3}
+        />
 
-      {/* Reduced number of clouds */}
-      <Cloud position={[-6, 4, -8]} />
-      <Cloud position={[2, 6, -12]} />
+        {/* Reduced number of clouds */}
+        <Cloud position={[-6, 4, -8]} />
+        <Cloud position={[2, 6, -12]} />
+
+        {/* 3D Title */}
+        <SceneTitle />
+      </group>
 
       {/* Stars - only visible at night, reduced count */}
       <Sparkles
@@ -210,9 +272,6 @@ function Scene() {
         <planeGeometry args={[50, 50]} />
         <meshStandardMaterial color={isNight ? "#0a2236" : "#a8dadc"} />
       </mesh>
-
-      {/* 3D Title */}
-      <SceneTitle />
     </>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
@@ -25,16 +25,32 @@ import TestimonialCard from "@/components/common/TestimonialCard";
 import AnimatedSection from "@/components/animations/AnimatedSection";
 import SafeHero from "@/components/hero/SafeHero";
 import dynamic from "next/dynamic";
+import SectionHeading from "@/components/ui/SectionHeading";
+import StatCounter from "@/components/sections/StatCounter";
+import Testimonials from "@/components/sections/Testimonials";
+import CTA from "@/components/sections/CTA";
+import ToursShowcase from "@/components/sections/ToursShowcase";
+import { Button } from "@/components/ui/Button";
 
-// Dynamically import the Hero3D component with no SSR
-const DynamicHero3D = dynamic(() => import("@/components/hero/Hero3D"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[95vh] flex items-center justify-center bg-gradient-to-b from-emerald-800 to-emerald-600">
-      <div className="text-white text-2xl">Loading 3D Experience...</div>
+// Import the ScrollScene component with dynamic loading
+// This is necessary because it uses client-side only features like Three.js
+const ScrollScene = dynamic(
+  () => import("@/components/3d/ScrollScene").then((mod) => mod.ScrollScene),
+  { ssr: false }
+);
+
+// Loading screen shown while the 3D scene is loading
+function LoadingScreen() {
+  return (
+    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-indigo-900 text-white">
+      <div className="w-24 h-24 border-8 border-t-emerald-500 border-b-emerald-700 border-l-transparent border-r-transparent rounded-full animate-spin mb-8"></div>
+      <h2 className="text-2xl font-bold mb-2">Loading 3D Experience</h2>
+      <p className="text-gray-300">
+        Preparing your journey through South Asia...
+      </p>
     </div>
-  ),
-});
+  );
+}
 
 // Testimonial data
 const testimonials = [
@@ -72,6 +88,7 @@ const stats = [
   { id: 4, value: "4.9/5", label: "Traveler Rating" },
 ];
 
+// Main Home page component
 export default function Home() {
   const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,145 +146,145 @@ export default function Home() {
     </div>
   );
 
+  // Define sections for the scroll scene
+  const sections = [
+    {
+      id: "hero",
+      title: "Adventure Through South Asia",
+      description:
+        "Discover breathtaking landscapes, ancient cultures, and unforgettable experiences across South Asia's most beautiful regions.",
+    },
+    {
+      id: "tours",
+      title: "Featured Tours",
+      description:
+        "Explore our handpicked selection of immersive adventures through the most stunning locations in South Asia.",
+    },
+    {
+      id: "stats",
+      title: "Why Choose Us",
+      description:
+        "Join thousands of satisfied adventurers who have explored South Asia with our expert guides.",
+    },
+    {
+      id: "testimonials",
+      title: "Traveler Stories",
+      description:
+        "Hear what our adventurers have to say about their life-changing experiences.",
+    },
+  ];
+
   return (
     <>
       <Navbar />
-      <main className="text-sm">
-        {/* 3D Hero Section using SafeHero component */}
-        <SafeHero />
-
-        {/* Stats Section */}
-        <AnimatedSection className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <StatCard
-                icon={<FiUsers className="text-4xl text-primary" />}
-                value="5000+"
-                label="Happy Travelers"
-              />
-              <StatCard
-                icon={<FiMapPin className="text-4xl text-primary" />}
-                value="25+"
-                label="Destinations"
-              />
-              <StatCard
-                icon={<FiAward className="text-4xl text-primary" />}
-                value="10+"
-                label="Years Experience"
-              />
-              <StatCard
-                icon={<FiStar className="text-4xl text-primary" />}
-                value="4.9/5"
-                label="Traveler Rating"
-              />
-            </div>
-          </div>
-        </AnimatedSection>
-
-        {/* Featured Tours Section */}
-        <AnimatedSection className="py-16" id="tours">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold text-center mb-4">
-              Featured Tours
-            </h2>
-            <p className="text-lg text-gray-600 text-center mb-12 max-w-3xl mx-auto">
-              Explore our most popular South Asian adventures, from challenging
-              Himalayan treks to cultural journeys through ancient
-              civilizations.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {loading
-                ? // Loading skeletons
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-gray-100 rounded-lg h-[450px] animate-pulse"
-                    />
-                  ))
-                : featuredTours.map((tour, index) => (
-                    <motion.div
-                      key={tour.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                      <TourCard tour={tour} />
-                    </motion.div>
-                  ))}
-            </div>
-            <div className="mt-12 text-center">
-              <Link
-                href="/tours"
-                className="inline-flex items-center space-x-2 text-emerald-600 hover:text-emerald-800 font-semibold transition duration-300"
-              >
-                <span>View All Tours</span>
-                <FiArrowRight />
-              </Link>
-            </div>
-          </div>
-        </AnimatedSection>
-
-        {/* Testimonials Section */}
-        <AnimatedSection className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <h2 className="text-4xl font-bold text-center mb-4">
-              What Our Travelers Say
-            </h2>
-            <p className="text-lg text-gray-600 text-center mb-12 max-w-3xl mx-auto">
-              Hear from adventurers who have experienced our South Asian
-              journeys and discovered the wonders of this magnificent region.
-            </p>
-            <div className="max-w-4xl mx-auto relative min-h-[300px]">
-              {testimonials.map((testimonial, index) => (
-                <div
-                  key={testimonial.id}
-                  className={`transition-all duration-500 absolute w-full ${
-                    activeTestimonial === index
-                      ? "opacity-100 translate-x-0"
-                      : "opacity-0 translate-x-20 pointer-events-none"
-                  }`}
-                >
-                  <TestimonialCard testimonial={testimonial} />
-                </div>
-              ))}
-              <div className="flex justify-center mt-8 space-x-2">
-                {testimonials.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTestimonial(index)}
-                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                      activeTestimonial === index
-                        ? "bg-emerald-600 w-6"
-                        : "bg-gray-300"
-                    }`}
-                    aria-label={`View testimonial ${index + 1}`}
+      <main className="relative overflow-x-hidden">
+        <noscript>
+          <LoadingScreen />
+        </noscript>
+        <ScrollScene sections={sections}>
+          {/* Hero Section */}
+          <section
+            id="hero"
+            className="min-h-screen flex items-center justify-center relative"
+          >
+            <div className="container mx-auto px-4 relative z-10 mt-20 md:mt-0">
+              <div className="max-w-2xl mx-auto text-center">
+                <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-md p-8 rounded-xl shadow-2xl">
+                  <SectionHeading
+                    title="Adventure Through South Asia"
+                    subtitle="Discover breathtaking landscapes, ancient cultures, and unforgettable experiences"
+                    align="center"
+                    tag="Explore Now"
+                    tagColor="emerald"
                   />
-                ))}
+                  <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+                    <Button
+                      href="/tours"
+                      variant="primary"
+                      size="lg"
+                      rounded
+                      animate
+                    >
+                      Explore Tours
+                    </Button>
+                    <Button
+                      href="/about"
+                      variant="outline"
+                      size="lg"
+                      rounded
+                      animate
+                    >
+                      Learn More
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </AnimatedSection>
+          </section>
 
-        {/* CTA Section */}
-        <AnimatedSection className="py-20 bg-emerald-700 text-white">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-4xl font-bold mb-4">
-              Ready for Your South Asian Adventure?
-            </h2>
-            <p className="text-lg mb-8 max-w-2xl mx-auto">
-              Join us on an unforgettable journey through the most spectacular
-              landscapes and vibrant cultures of South Asia.
-            </p>
-            <Link
-              href="/contact"
-              className="bg-white text-emerald-700 hover:bg-gray-100 font-bold py-3 px-8 rounded-full inline-flex items-center space-x-2 transition duration-300"
-            >
-              <span>Contact Us Today</span>
-              <FiArrowRight />
-            </Link>
-          </div>
-        </AnimatedSection>
+          {/* Tours Section */}
+          <section id="tours" className="py-20 md:py-32 relative">
+            <div className="container mx-auto px-4 relative z-10">
+              <SectionHeading
+                title="Featured Tours"
+                subtitle="Explore our handpicked selection of immersive adventures"
+                align="center"
+                divider
+              />
+              <Suspense
+                fallback={
+                  <div className="h-96 flex items-center justify-center">
+                    Loading tours...
+                  </div>
+                }
+              >
+                <ToursShowcase />
+              </Suspense>
+              <div className="mt-12 text-center">
+                <Button
+                  href="/tours"
+                  variant="secondary"
+                  size="lg"
+                  rounded
+                  animate
+                >
+                  View All Tours
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          {/* Stats Section */}
+          <section id="stats" className="py-20 md:py-32 relative">
+            <div className="container mx-auto px-4 relative z-10">
+              <SectionHeading
+                title="Why Choose Us"
+                subtitle="Join thousands of satisfied adventurers who have explored South Asia with our expert guides"
+                align="center"
+                divider
+              />
+              <StatCounter />
+            </div>
+          </section>
+
+          {/* Testimonials Section */}
+          <section id="testimonials" className="py-20 md:py-32 relative">
+            <div className="container mx-auto px-4 relative z-10">
+              <SectionHeading
+                title="Traveler Stories"
+                subtitle="Hear what our adventurers have to say about their life-changing experiences"
+                align="center"
+                divider
+              />
+              <Testimonials />
+            </div>
+          </section>
+
+          {/* Call to Action */}
+          <section id="cta" className="py-20 md:py-32 relative">
+            <CTA />
+          </section>
+        </ScrollScene>
 
         <PexelsNotice className="bg-gray-100 py-5 text-center text-gray-500 text-xs" />
       </main>
