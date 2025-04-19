@@ -17,12 +17,7 @@ export const PUBLIC_ROUTES = [
 ];
 
 // Define routes for authentication
-export const AUTH_ROUTES = [
-  "/(regular-routes)/login",
-  "/(regular-routes)/signup",
-  "/login",
-  "/signup",
-];
+export const AUTH_ROUTES = ["/(auth-routes)/login", "/(auth-routes)/signup"];
 
 // Check if a route is protected
 export const isProtectedRoute = (path: string): boolean => {
@@ -33,8 +28,12 @@ export const isProtectedRoute = (path: string): boolean => {
 
 // Check if a route is auth-related
 export const isAuthRoute = (path: string): boolean => {
-  return AUTH_ROUTES.some(
-    (route) => path === route || path.startsWith(`${route}/`)
+  return (
+    AUTH_ROUTES.some(
+      (route) => path === route || path.startsWith(`${route}/`)
+    ) ||
+    path === "/login" ||
+    path === "/signup"
   );
 };
 
