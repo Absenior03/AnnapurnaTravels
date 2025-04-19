@@ -24,12 +24,12 @@ const sampleTours: Tour[] = [
       
       At Everest Base Camp (5,364m), you'll stand at the foot of the world's tallest mountain, a truly humbling experience. You'll also climb Kala Patthar (5,545m) for the best views of Mount Everest's peak.
       
-      Throughout the trek, you'll stay in comfortable teahouses, enjoy local Nepali cuisine, and learn about the rich Sherpa culture and Buddhist traditions of the region.
+      Throughout the trek, you'll stay in comfortable teahouses, enjoy local cuisine, and learn about the rich Sherpa culture and Buddhist traditions of the region.
     `,
     duration: 14,
     difficulty: "challenging",
     price: 1800,
-    location: "Nepal",
+    location: "South Asia",
     image: "https://images.pexels.com/photos/2335126/pexels-photo-2335126.jpeg",
     gallery: [
       "https://images.pexels.com/photos/2335126/pexels-photo-2335126.jpeg",
@@ -121,7 +121,7 @@ const sampleTours: Tour[] = [
     excludes: [
       "International airfare",
       "Travel insurance",
-      "Nepal visa fees",
+      "Visa fees",
       "Personal expenses",
       "Tips for guides and porters",
       "Alcoholic and bottled beverages",
@@ -146,7 +146,7 @@ const sampleTours: Tour[] = [
     duration: 18,
     difficulty: "moderate",
     price: 1600,
-    location: "Nepal",
+    location: "South Asia",
     image: "https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg",
     gallery: [
       "https://images.pexels.com/photos/2901209/pexels-photo-2901209.jpeg",
@@ -192,7 +192,7 @@ const sampleTours: Tour[] = [
     excludes: [
       "International airfare",
       "Travel insurance",
-      "Nepal visa fees",
+      "Visa fees",
       "Personal expenses",
       "Tips for guides and porters",
       "Alcoholic and bottled beverages",
@@ -212,12 +212,12 @@ const sampleTours: Tour[] = [
       
       The highlight of the trek is reaching Kyanjin Gompa (3,870m), where you'll be surrounded by snow-capped peaks including Langtang Lirung (7,227m). An optional hike to Kyanjin Ri (4,773m) rewards you with incredible 360-degree mountain views.
       
-      This trek is less crowded than others in Nepal, offering a more peaceful and authentic experience of the Himalayas.
+      This trek is less crowded than others in South Asia, offering a more peaceful and authentic experience of the Himalayas.
     `,
     duration: 7,
     difficulty: "moderate",
     price: 950,
-    location: "Nepal",
+    location: "South Asia",
     image: "https://images.pexels.com/photos/1365425/pexels-photo-1365425.jpeg",
     gallery: [
       "https://images.pexels.com/photos/1365425/pexels-photo-1365425.jpeg",
@@ -273,7 +273,7 @@ const sampleTours: Tour[] = [
     excludes: [
       "International airfare",
       "Travel insurance",
-      "Nepal visa fees",
+      "Visa fees",
       "Personal expenses",
       "Tips for guides and porters",
       "Alcoholic and bottled beverages",

@@ -16,6 +16,8 @@ const devFallbacks = {
   FIREBASE_MESSAGING_SENDER_ID: "123456789",
   FIREBASE_APP_ID: "1:123456789:web:abcdef",
   ADMIN_EMAIL: "admin@example.com",
+  FIREBASE_MOCK_MODE: "true", // Enable mock mode by default in development
+  SOUTH_ASIA_REGIONS: "India,Nepal,Bhutan,Tibet,Sri Lanka,Maldives,Bangladesh",
 };
 
 /**
@@ -86,3 +88,23 @@ export function maskSensitiveValue(value: string | undefined): string {
  * Admin email from environment
  */
 export const adminEmail = getEnv("ADMIN_EMAIL");
+
+/**
+ * Check if Firebase mock mode is enabled
+ */
+export const isFirebaseMockModeEnabled = (): boolean => {
+  return getEnv("FIREBASE_MOCK_MODE") === "true";
+};
+
+/**
+ * Get list of South Asian regions covered by the tour company
+ */
+export const southAsiaRegions = getEnv("SOUTH_ASIA_REGIONS")?.split(",") || [
+  "India",
+  "Nepal",
+  "Bhutan",
+  "Tibet",
+  "Sri Lanka",
+  "Maldives",
+  "Bangladesh",
+];
