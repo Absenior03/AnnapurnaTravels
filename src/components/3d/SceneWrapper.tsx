@@ -96,7 +96,7 @@ function Fallback() {
 }
 
 // Scene optimizations controller
-function SceneController({
+function CameraController({
   onLoaded,
   mousePosition,
   lookAt = [0, 0, 0],
@@ -379,13 +379,20 @@ export default function SceneWrapper({
               />
             )}
 
-            {/* Add Scene Controller for performance optimization */}
+            {/* Add performance optimization controller */}
             <SceneController
               onPerformanceSettingsChange={handlePerformanceSettingsChange}
               onLoadComplete={() => {
                 console.log("Scene controller initialization complete");
                 if (!isLoaded) setIsLoaded(true);
               }}
+            />
+
+            {/* Add camera controller for mouse interaction */}
+            <CameraController
+              onLoaded={onLoaded}
+              mousePosition={mousePosition}
+              lookAt={lookAt}
             />
 
             {children}
