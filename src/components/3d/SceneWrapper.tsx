@@ -27,6 +27,7 @@ import SceneController from "./SceneController";
 // Define modern Three.js constants for color encoding
 // These replace the deprecated LinearEncoding and sRGBEncoding
 const LINEAR_ENCODING = THREE.LinearSRGBColorSpace || 3000;
+const SRGB_ENCODING = THREE.SRGBColorSpace || 3001;
 
 // Options for environments that can be used with lower resource usage
 const LIGHTWEIGHT_ENVIRONMENTS = [
@@ -126,7 +127,8 @@ function CameraController({
         gl.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
         gl.shadowMap.enabled = false;
         gl.shadowMap.type = THREE.BasicShadowMap; // less demanding
-        gl.outputEncoding = LINEAR_ENCODING; // less demanding than sRGB
+        // Use modern color space properties instead of deprecated outputEncoding
+        gl.outputColorSpace = LINEAR_ENCODING;
       } else {
         gl.setPixelRatio(Math.min(2, window.devicePixelRatio));
       }
@@ -282,21 +284,50 @@ export default function SceneWrapper({
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const initTimeRef = useRef<number>(Date.now());
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [webGLSupported, setWebGLSupported] = useState(true);
+  
+  // Check WebGL support as early as possible
   useEffect(() => {
     setIsClient(true);
-
-    // Set a timeout to report an error if the scene doesn't load
-    loadTimeoutRef.current = setTimeout(() => {
-      if (!isLoaded) {
-        const timeoutError = new Error("Scene load timeout");
-        console.error(
-          "Scene failed to load within timeout period:",
-          timeoutError
+    
+    // Check if WebGL is supported before attempting to render
+    const checkWebGLSupport = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const isSupported = !!(
+          window.WebGLRenderingContext && 
+          (canvas.getContext('webgl') || canvas.getContext('experimental-webgl'))
         );
-        onError?.(timeoutError);
+        
+        if (!isSupported) {
+          console.error('WebGL not supported by this browser');
+          setWebGLSupported(false);
+          onError?.(new Error('WebGL not supported by this browser'));
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error('Error checking WebGL support:', error);
+        setWebGLSupported(false);
+        onError?.(new Error('Error checking WebGL support'));
+        return false;
       }
-    }, 10000); // 10 second timeout
+    };
+    
+    // Only proceed if WebGL is supported
+    if (checkWebGLSupport()) {
+      // Set a timeout to report an error if the scene doesn't load
+      loadTimeoutRef.current = setTimeout(() => {
+        if (!isLoaded) {
+          const timeoutError = new Error("Scene load timeout");
+          console.error(
+            "Scene failed to load within timeout period:",
+            timeoutError
+          );
+          onError?.(timeoutError);
+        }
+      }, 10000); // 10 second timeout
+    }
 
     return () => {
       if (loadTimeoutRef.current) {
@@ -308,7 +339,12 @@ export default function SceneWrapper({
   // Update camera lookAt target
   useEffect(() => {
     if (isClient && cameraRef.current) {
-      cameraRef.current.lookAt(new Vector3(...lookAt));
+      // Ensure lookAt is an array with exactly 3 elements
+      const targetPosition = Array.isArray(lookAt) && lookAt.length === 3 
+        ? new Vector3(lookAt[0], lookAt[1], lookAt[2])
+        : new Vector3(0, 0, 0);
+        
+      cameraRef.current.lookAt(targetPosition);
     }
   }, [isClient, lookAt]);
 
@@ -328,13 +364,22 @@ export default function SceneWrapper({
     }, 100);
   };
 
+  // Handle errors that occur during initialization
+  const handleError = (error: Error) => {
+    console.error("Scene initialization error:", error);
+    setHasError(true);
+    if (onError) {
+      onError(error);
+    }
+  };
+
   const handlePerformanceSettingsChange = (settings: any) => {
     setPerformanceSettings(settings);
     console.log("Applied performance settings:", settings);
   };
 
-  if (!isClient) {
-    return <div className={`${className} bg-gray-900`}>{fallback}</div>;
+  if (!isClient || !webGLSupported) {
+    return <div className={`${className} bg-gray-900`}>{fallback || <Fallback />}</div>;
   }
 
   // Use a more lightweight environment if available
@@ -349,67 +394,87 @@ export default function SceneWrapper({
       fallbackRender={({ error }) => (
         <CanvasErrorFallback fallback={fallback} error={error} />
       )}
-      onError={onError}
+      onError={(error, info) => {
+        console.error("ErrorBoundary caught error:", error, info);
+        if (onError) onError(error);
+      }}
     >
       <div className={`${className} relative`}>
-        <Canvas
-          gl={{
-            antialias: true,
-            alpha: true,
-            powerPreference: "high-performance",
-            failIfMajorPerformanceCaveat: false,
-          }}
-          shadows={shadows}
-          dpr={[1, Math.min(window.devicePixelRatio, 2)]} // Limit DPR for performance
-          legacy={false} // Use modern WebGL features when available
-          onCreated={handleCreated}
-          style={{ background }}
-        >
-          <Suspense fallback={<SceneLoading />}>
-            <PerspectiveCamera
-              ref={cameraRef}
-              makeDefault
-              position={cameraPosition}
-              fov={fov}
-              near={0.1}
-              far={1000}
-            />
+        {/* Wrap Canvas in a try-catch to handle initialization errors */}
+        {(() => {
+          try {
+            // Determine background color/value that's compatible with Three.js
+            const canvasBackground = typeof background === 'string' ? background : undefined;
+            
+            return (
+              <Canvas
+                gl={{
+                  antialias: true,
+                  alpha: true,
+                  powerPreference: "high-performance",
+                  failIfMajorPerformanceCaveat: true, // Prevent rendering on devices with poor WebGL performance
+                }}
+                shadows={shadows}
+                dpr={[1, Math.min(window.devicePixelRatio, 2)]} // Limit DPR for performance
+                legacy={false} // Use modern WebGL features when available
+                onCreated={handleCreated}
+                onError={handleError}
+                style={{ background: canvasBackground }}
+              >
+                <Suspense fallback={<SceneLoading />}>
+                  <PerspectiveCamera
+                    ref={cameraRef}
+                    makeDefault
+                    position={cameraPosition}
+                    fov={fov}
+                    near={0.1}
+                    far={1000}
+                  />
 
-            {controls && (
-              <OrbitControls
-                makeDefault
-                enablePan={enablePan}
-                enableZoom={enableZoom}
-              />
-            )}
+                  {controls && (
+                    <OrbitControls
+                      makeDefault
+                      enablePan={enablePan}
+                      enableZoom={enableZoom}
+                    />
+                  )}
 
-            {/* Add performance optimization controller */}
-            <SceneController
-              onPerformanceSettingsChange={handlePerformanceSettingsChange}
-              onLoadComplete={() => {
-                console.log("Scene controller initialization complete");
-                if (!isLoaded) setIsLoaded(true);
-              }}
-            />
+                  {/* Add performance optimization controller */}
+                  <SceneController
+                    onPerformanceSettingsChange={handlePerformanceSettingsChange}
+                    onLoadComplete={() => {
+                      console.log("Scene controller initialization complete");
+                      if (!isLoaded) setIsLoaded(true);
+                    }}
+                  />
 
-            {/* Add camera controller for mouse interaction */}
-            <CameraController
-              onLoaded={onLoaded}
-              mousePosition={mousePosition}
-              lookAt={lookAt}
-            />
+                  {/* Add camera controller for mouse interaction */}
+                  <CameraController
+                    onLoaded={onLoaded}
+                    mousePosition={mousePosition}
+                    lookAt={lookAt}
+                  />
 
-            {children}
+                  {children}
 
-            {environment && (
-              <Environment
-                preset={safeEnvironment as any}
-                // Reduce environment quality based on performance settings
-                resolution={performanceSettings?.pixelRatio < 1.5 ? 256 : 512}
-              />
-            )}
-          </Suspense>
-        </Canvas>
+                  {environment && (
+                    <Environment
+                      preset={safeEnvironment as any}
+                      // Safely check performanceSettings
+                      resolution={
+                        performanceSettings && 'pixelRatio' in performanceSettings && 
+                        performanceSettings.pixelRatio < 1.5 ? 256 : 512
+                      }
+                    />
+                  )}
+                </Suspense>
+              </Canvas>
+            );
+          } catch (error) {
+            console.error("Error in Canvas:", error);
+            return <Fallback />;
+          }
+        })()}
       </div>
     </ErrorBoundary>
   );

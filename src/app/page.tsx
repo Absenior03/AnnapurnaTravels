@@ -129,6 +129,26 @@ const MountainShowcaseFallback = () => (
   </section>
 );
 
+// Add the ThreeDFallback component that was referenced but not defined
+function ThreeDFallback() {
+  return (
+    <div className="w-full h-full min-h-[400px] flex items-center justify-center bg-gradient-to-b from-blue-900 to-indigo-900 rounded-xl">
+      <div className="text-white text-center max-w-lg p-8">
+        <h3 className="text-2xl font-bold mb-3">
+          Spectacular Mountain Ranges
+        </h3>
+        <p className="mb-6">
+          Explore the majesty of the Himalayas and other magnificent mountain
+          ranges across South Asia
+        </p>
+        <Button href="/tours" variant="primary" size="lg" rounded>
+          View Tours
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // Add a function to check if we should show the 3D content
 function useShow3D() {
   const [show3D, setShow3D] = useState(false);
@@ -161,16 +181,44 @@ function SafeThreeDComponent({
   component: Component,
   fallback = <ThreeDFallback />,
 }) {
+  const [error, setError] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  
+  // Check if we're in the browser
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  // Handle any render errors
+  const handleError = () => {
+    console.error("Failed to render 3D component");
+    setError(true);
+  };
+  
   // Client-side only
-  if (typeof window === "undefined") {
+  if (!isClient || error) {
+    return fallback;
+  }
+
+  // Verify the component exists before rendering it
+  if (!Component) {
+    console.error("3D component is undefined");
     return fallback;
   }
 
   try {
     return (
-      <Suspense fallback={<LoadingScreen />}>
-        <Component fallbackImage="/images/mountains-fallback.jpg" />
-      </Suspense>
+      <ErrorBoundary 
+        fallback={fallback}
+        onError={(error) => {
+          console.error("3D component error:", error);
+          setError(true);
+        }}
+      >
+        <Suspense fallback={<LoadingScreen />}>
+          <Component fallbackImage="/images/mountains-fallback.jpg" />
+        </Suspense>
+      </ErrorBoundary>
     );
   } catch (error) {
     console.error("Failed to render 3D component:", error);

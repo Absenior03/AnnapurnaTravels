@@ -29,9 +29,13 @@ export default function MountainShowcase() {
   const [loadProgress, setLoadProgress] = useState(0);
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
+  const [hasWarnedUser, setHasWarnedUser] = useState(false);
 
   // Initialize client state and set up error handling
   useEffect(() => {
+    // Only execute this in the browser
+    if (typeof window === 'undefined') return;
+    
     setIsClient(true);
 
     // Simulate load progress
@@ -44,14 +48,20 @@ export default function MountainShowcase() {
       }
     }, 300);
 
-    // Set a timeout to show fallback if 3D scene takes too long to load
+    // Set a shorter timeout to show fallback if 3D scene takes too long to load
     loadTimeoutRef.current = setTimeout(() => {
       if (mountedRef.current) {
         console.warn("3D scene load timeout exceeded, showing fallback");
         clearInterval(loadInterval);
         setShowFallback(true);
+        
+        // Show a one-time warning to the user if this is their first timeout
+        if (!hasWarnedUser) {
+          setHasWarnedUser(true);
+          setLoadError("The 3D scene is taking too long to load. Using a simplified view instead.");
+        }
       }
-    }, 6000);
+    }, 5000); // Shortened timeout from 6000ms to 5000ms
 
     // Check for WebGL compatibility
     try {
@@ -67,6 +77,40 @@ export default function MountainShowcase() {
         if (loadTimeoutRef.current) {
           clearTimeout(loadTimeoutRef.current);
         }
+        return;
+      }
+      
+      // Check if we can create a test texture to verify WebGL is working properly
+      // Using proper type casting for WebGL context
+      try {
+        // Type cast to WebGLRenderingContext to access WebGL methods
+        const webgl = gl as WebGLRenderingContext;
+        const texture = webgl.createTexture();
+        if (texture) {
+          webgl.bindTexture(webgl.TEXTURE_2D, texture);
+          // Create a simple 1x1 blue texture
+          const pixel = new Uint8Array([0, 0, 255, 255]);
+          webgl.texImage2D(
+            webgl.TEXTURE_2D, 
+            0, 
+            webgl.RGBA, 
+            1, 1, 0, 
+            webgl.RGBA, 
+            webgl.UNSIGNED_BYTE, 
+            pixel
+          );
+          // Clean up
+          webgl.deleteTexture(texture);
+        }
+      } catch (textureError) {
+        console.error("WebGL texture creation failed:", textureError);
+        setLoadError("Your browser supports WebGL but encountered an error. Using fallback view.");
+        setShowFallback(true);
+        clearInterval(loadInterval);
+        if (loadTimeoutRef.current) {
+          clearTimeout(loadTimeoutRef.current);
+        }
+        return;
       }
 
       // Detect device capabilities for optimal mountain detail
@@ -95,11 +139,12 @@ export default function MountainShowcase() {
             navigator.userAgent
           );
 
-        // Check hardware capabilities
+        // Check hardware capabilities - safely check for optional browser APIs
         const hasWeakHardware =
           (navigator.hardwareConcurrency &&
             navigator.hardwareConcurrency <= 4) ||
-          (navigator.deviceMemory && navigator.deviceMemory <= 4);
+          // Use optional chaining for deviceMemory which might not be available in all browsers
+          (navigator as any)?.deviceMemory <= 4;
 
         if (isMobile || hasWeakHardware) {
           return "medium";
@@ -110,6 +155,7 @@ export default function MountainShowcase() {
 
       setDevicePerformance(detectDevicePerformance());
     } catch (err) {
+      console.error("Error initializing 3D experience:", err);
       setLoadError("Error initializing 3D experience");
       setShowFallback(true);
 
@@ -123,8 +169,9 @@ export default function MountainShowcase() {
       if (loadTimeoutRef.current) {
         clearTimeout(loadTimeoutRef.current);
       }
+      clearInterval(loadInterval);
     };
-  }, []);
+  }, [hasWarnedUser]);
 
   // Handle mouse movement for parallax effect
   useEffect(() => {
@@ -153,6 +200,18 @@ export default function MountainShowcase() {
     setTimeout(() => {
       setIsLoading(false);
     }, 300);
+  };
+  
+  // Handle scene errors more gracefully
+  const handleSceneError = (error: Error) => {
+    console.error("Mountain scene error:", error);
+    setLoadError(`Error loading 3D scene: ${error.message}`);
+    setShowFallback(true);
+    
+    // If we're still in loading state, clear it
+    if (isLoading) {
+      setIsLoading(false);
+    }
   };
 
   // Performance optimization - adjust detail level based on device capability
@@ -190,7 +249,7 @@ export default function MountainShowcase() {
             title="Discover South Asia's Majestic Mountains"
             subtitle="Experience the beauty of the Himalayas"
             align="center"
-            titleSize="large"
+            titleSize="xl"
           />
           {loadError && (
             <div className="mt-4 flex items-center justify-center text-amber-300 bg-amber-900/40 py-2 px-4 rounded-md">
@@ -231,6 +290,11 @@ export default function MountainShowcase() {
               <p className="text-white/70 text-sm mt-2">
                 Loading mountains ({loadProgress.toFixed(0)}%)
               </p>
+              {loadProgress > 70 && (
+                <p className="text-amber-300 text-xs mt-2 max-w-xs text-center">
+                  This may take longer on some devices. Please be patient...
+                </p>
+              )}
             </div>
           </motion.div>
         )}
@@ -242,12 +306,9 @@ export default function MountainShowcase() {
         <div className="w-full h-[50vh] md:h-[60vh] lg:h-[70vh]">
           <SceneWrapper
             onLoaded={handleSceneLoaded}
-            onError={(error) => {
-              console.error("Mountain scene error:", error);
-              setLoadError("Error loading 3D scene");
-              setShowFallback(true);
-            }}
+            onError={handleSceneError}
             cameraPosition={[0, 2, 7]}
+            fallback={<FallbackDisplay />}
           >
             <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
@@ -256,36 +317,24 @@ export default function MountainShowcase() {
               position={[-1.5, -1, 0]}
               color={MOUNTAIN_COLORS.primary}
               size={3}
-              detail={getMountainDetail(
-                isClient && window.innerWidth < 768 ? 12 : 24
-              )}
-              materialType={
-                devicePerformance === "high" ? "physical" : "standard"
-              }
+              detail={0.75} // Reduced detail for better performance
+              materialType="standard" // Always use standard material for better compatibility
             />
 
             <Mountain
               position={[1.5, -1.2, -2]}
               color={MOUNTAIN_COLORS.secondary}
               size={2.5}
-              detail={getMountainDetail(
-                isClient && window.innerWidth < 768 ? 10 : 20
-              )}
-              materialType={
-                devicePerformance === "high" ? "physical" : "standard"
-              }
+              detail={0.6} // Reduced detail for better performance
+              materialType="standard"
             />
 
             <Mountain
               position={[0, -1.5, -4]}
               color={MOUNTAIN_COLORS.dark}
               size={4}
-              detail={getMountainDetail(
-                isClient && window.innerWidth < 768 ? 8 : 16
-              )}
-              materialType={
-                devicePerformance === "high" ? "physical" : "standard"
-              }
+              detail={0.5} // Reduced detail for better performance
+              materialType="standard"
             />
           </SceneWrapper>
 

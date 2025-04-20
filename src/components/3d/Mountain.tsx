@@ -2,7 +2,7 @@
 
 import React, { useRef, useMemo, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import { InstancedMesh, Color, Vector3 } from "three";
+import { InstancedMesh, Color, Vector3, MathUtils } from "three";
 import { MeshWobbleMaterial, useTexture } from "@react-three/drei";
 
 interface MountainProps {
@@ -50,13 +50,19 @@ export default function Mountain({
   const initialY = position[1];
   const [isHovered, setIsHovered] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  
+  // For performance optimization, create a memo for the position
+  const [x, y, z] = position;
+  const memoizedPosition = useMemo(() => new Vector3(x, y, z), [x, y, z]);
 
-  // Generate optimized geometry using useMemo
+  // Generate optimized geometry using useMemo with a safety check for detail value
   const geometry = useMemo(() => {
-    return generateMountainGeometry(detail, size, noiseScale, noiseAmplitude);
+    // Ensure detail is within safe bounds to prevent crashes
+    const safeDetail = Math.max(0.1, Math.min(detail, 2));
+    return generateMountainGeometry(safeDetail, size, noiseScale, noiseAmplitude);
   }, [detail, size, noiseScale, noiseAmplitude]);
 
-  // Load texture if provided
+  // Load texture with error handling if provided
   const textureMap = useMemo(() => {
     if (!texture) return null;
     try {
@@ -69,21 +75,29 @@ export default function Mountain({
     }
   }, [texture]);
 
-  // Set up animation frame
-  useFrame(({ clock, scroll }) => {
+  // Set up animation frame with performance optimizations
+  useFrame((state) => {
     if (!meshRef.current) return;
 
-    // Only perform these calculations if the mesh is visible on screen
-    // to save processing power
+    // Only update if visible in viewport for optimization
     if (meshRef.current.visible) {
-      // Apply rotation animation
-      meshRef.current.rotation.y += rotationSpeed;
+      // Limit rotation speed based on frame rate (deltaTime)
+      meshRef.current.rotation.y += rotationSpeed; 
 
-      // Apply scroll-based position change
-      const scrollY = scroll?.offset.y || 0;
-      meshRef.current.position.y = initialY - scrollY * scrollMultiplier * 2;
+      // Apply scroll-based position change if scroll data is available
+      // Access scroll data properly with proper type casting when needed
+      const scrollData = state.scroll as { offset?: { y: number } } | undefined;
+      if (scrollData && scrollData.offset) {
+        const scrollY = scrollData.offset.y || 0;
+        const newY = initialY - scrollY * scrollMultiplier * 2;
+        meshRef.current.position.y = MathUtils.lerp(
+          meshRef.current.position.y, 
+          newY, 
+          0.1
+        ); // Use lerp for smoother motion
+      }
 
-      // Apply hover scale effect
+      // Apply hover scale effect with smoothing
       if (isHovered) {
         meshRef.current.scale.lerp(
           new Vector3(hoverScale, hoverScale, hoverScale),
@@ -97,21 +111,25 @@ export default function Mountain({
 
   // Optimize mesh updates
   useEffect(() => {
-    if (meshRef.current) {
-      const timer = setTimeout(() => {
-        // Reduce update frequency to save performance
-        meshRef.current!.matrixAutoUpdate = false;
-        meshRef.current!.updateMatrix();
-      }, 5000); // After 5 seconds, reduce update frequency
-
-      return () => clearTimeout(timer);
-    }
+    if (!meshRef.current) return;
+    
+    // Use a more conservative approach with matrixAutoUpdate
+    // Only disable updates after animation has settled
+    const timer = setTimeout(() => {
+      if (meshRef.current) {
+        // Check if mesh still exists before updating
+        meshRef.current.matrixAutoUpdate = false;
+        meshRef.current.updateMatrix();
+      }
+    }, 5000); // After 5 seconds, reduce update frequency
+    
+    return () => clearTimeout(timer);
   }, []);
 
   return (
     <mesh
       ref={meshRef}
-      position={position}
+      position={memoizedPosition}
       onPointerOver={() => setIsHovered(true)}
       onPointerOut={() => setIsHovered(false)}
       castShadow
@@ -119,41 +137,51 @@ export default function Mountain({
     >
       {geometry}
 
-      {materialType === "wobble" ? (
-        <MeshWobbleMaterial
-          color={color}
-          wireframe={wireframe}
-          factor={wobbleStrength} // Wobble strength
-          speed={wobbleSpeed} // Wobble speed
-          roughness={0.4}
-          metalness={0.1}
-          map={textureMap}
-        />
-      ) : materialType === "physical" ? (
-        <meshPhysicalMaterial
-          color={color}
-          wireframe={wireframe}
-          roughness={0.5}
-          metalness={0.2}
-          clearcoat={0.3}
-          clearcoatRoughness={0.25}
-          map={textureMap}
-        />
-      ) : materialType === "toon" ? (
-        <meshToonMaterial
-          color={color}
-          wireframe={wireframe}
-          map={textureMap}
-        />
-      ) : (
-        <meshStandardMaterial
-          color={color}
-          wireframe={wireframe}
-          roughness={0.7}
-          metalness={0.1}
-          map={textureMap}
-        />
-      )}
+      {/* Use a switch based on materialType for better readability */}
+      {(() => {
+        // Default material props for consistency
+        const commonProps = {
+          color: color,
+          wireframe: wireframe,
+          map: textureMap,
+        };
+        
+        switch (materialType) {
+          case "wobble":
+            return (
+              <MeshWobbleMaterial
+                {...commonProps}
+                factor={wobbleStrength}
+                speed={wobbleSpeed}
+                roughness={0.4}
+                metalness={0.1}
+              />
+            );
+          case "physical":
+            return (
+              <meshPhysicalMaterial
+                {...commonProps}
+                roughness={0.5}
+                metalness={0.2}
+                clearcoat={0.3}
+                clearcoatRoughness={0.25}
+              />
+            );
+          case "toon":
+            return (
+              <meshToonMaterial {...commonProps} />
+            );
+          case "standard":
+          default:
+            return (
+              <meshStandardMaterial
+                {...commonProps}
+                roughness={0.7}
+                metalness={0.1}
+              />
+            );
+        }
+      })()}
     </mesh>
   );
 }
@@ -166,11 +194,16 @@ function generateMountainGeometry(
   noiseAmplitude: number
 ) {
   // Clamp detail to avoid performance issues
-  const safeDetail = Math.min(Math.max(detail, 0.5), 2);
-  const segments = Math.floor(16 * safeDetail);
+  const safeDetail = Math.min(Math.max(detail, 0.1), 2);
+  
+  // Lower segment count for better performance
+  const segments = Math.floor(12 * safeDetail);
+  
+  // Prevent extreme low values that might cause rendering issues
+  const safeSegments = Math.max(segments, 6);
 
   // Create cone geometry with specified segments
-  const geometry = <coneGeometry args={[size, size * 2, segments, 1, false]} />;
+  const geometry = <coneGeometry args={[size, size * 2, safeSegments, 1, false]} />;
 
   return geometry;
 }

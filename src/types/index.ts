@@ -14,6 +14,7 @@ export interface Tour {
   excludes: string[];
   featured?: boolean;
   createdAt?: string;
+  season?: string;
 }
 
 export interface User {
