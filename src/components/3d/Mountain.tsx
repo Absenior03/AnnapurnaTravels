@@ -1,188 +1,172 @@
 "use client";
 
-import React, { useRef, useMemo, useState } from "react";
+import React, { useRef, useMemo, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
-import * as THREE from "three";
-import { Vector3, ConeGeometry } from "three";
-import { createNoise2D } from "simplex-noise";
+import { InstancedMesh, Color, Vector3 } from "three";
+import { MeshWobbleMaterial, useTexture } from "@react-three/drei";
+import SimplexNoise from "simplex-noise";
 
 interface MountainProps {
-  position: Vector3 | [number, number, number];
+  position?: [number, number, number];
+  scrollMultiplier?: number;
   color?: string;
   wireframe?: boolean;
-  size?: number | [number, number, number];
+  size?: number;
   detail?: number;
-  scrollMultiplier?: number;
-  mouseX?: number;
-  mouseY?: number;
+  rotationSpeed?: number;
+  noiseScale?: number;
+  noiseAmplitude?: number;
+  wobbleSpeed?: number;
+  wobbleStrength?: number;
+  materialType?: "standard" | "physical" | "toon" | "wobble";
+  texture?: string | null;
+  hoverScale?: number;
 }
 
-function Mountain({
-  position,
-  color = "#3b82f6",
+export default function Mountain({
+  position = [0, 0, 0],
+  scrollMultiplier = 1,
+  color = "#3e64ff",
   wireframe = false,
-  size = 10,
-  detail = 48,
-  scrollMultiplier = 0.5,
-  mouseX = 0.5,
-  mouseY = 0.5,
+  size = 2,
+  detail = 1,
+  rotationSpeed = 0.0008,
+  noiseScale = 1,
+  noiseAmplitude = 0.5,
+  wobbleSpeed = 1,
+  wobbleStrength = 0.2,
+  materialType = "standard",
+  texture = null,
+  hoverScale = 1.05,
 }: MountainProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const [hasError, setHasError] = useState(false);
+  const initialY = position[1];
+  const [isHovered, setIsHovered] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
-  // Create noise function with error handling
-  const noise2D = useMemo(() => {
-    try {
-      return createNoise2D();
-    } catch (error) {
-      console.error("Error creating noise function:", error);
-      setHasError(true);
-      // Return a simple function that just returns 0 as fallback
-      return () => 0;
-    }
-  }, []);
-
-  // Try to use scroll context, but don't require it
-  let scrollContext;
-  try {
-    // Dynamically import to prevent SSR issues
-    const { useScrollContext } = require("@/context/ScrollContext");
-    scrollContext = useScrollContext();
-  } catch (error) {
-    // Silent fail - just don't use scroll effects if not available
-  }
-
-  // Generate mountain geometry with noise and error handling
+  // Generate optimized geometry using useMemo
   const geometry = useMemo(() => {
-    try {
-      const sizeX = Array.isArray(size) ? size[0] : size;
-      const sizeY = Array.isArray(size) ? size[1] : size;
-      const sizeZ = Array.isArray(size) ? size[2] : size;
+    return generateMountainGeometry(detail, size, noiseScale, noiseAmplitude);
+  }, [detail, size, noiseScale, noiseAmplitude]);
 
-      return generateMountainGeometry(detail, sizeX, sizeY, sizeZ, noise2D);
+  // Load texture if provided
+  const textureMap = useMemo(() => {
+    if (!texture) return null;
+    try {
+      // Create a safer texture loading approach with fallback
+      return useTexture(texture);
     } catch (error) {
-      console.error("Error generating mountain geometry:", error);
-      setHasError(true);
-      // Return a simple cone geometry as fallback
-      return new ConeGeometry(5, 10, 16);
+      console.error("Failed to load mountain texture:", error);
+      setLoadError(true);
+      return null;
     }
-  }, [size, detail, noise2D]);
+  }, [texture]);
 
-  // Animation with error handling
-  useFrame(({ clock }) => {
-    if (!meshRef.current || hasError) return;
+  // Set up animation frame
+  useFrame(({ clock, scroll }) => {
+    if (!meshRef.current) return;
 
-    try {
-      // Apply mouse movement for parallax effect
-      const rotationX = (mouseY - 0.5) * 0.1;
-      const rotationY = (mouseX - 0.5) * 0.1;
+    // Only perform these calculations if the mesh is visible on screen
+    // to save processing power
+    if (meshRef.current.visible) {
+      // Apply rotation animation
+      meshRef.current.rotation.y += rotationSpeed;
 
-      meshRef.current.rotation.x =
-        meshRef.current.rotation.x * 0.92 + rotationX * 0.08;
-      meshRef.current.rotation.y =
-        meshRef.current.rotation.y * 0.92 + rotationY * 0.08;
+      // Apply scroll-based position change
+      const scrollY = scroll?.offset.y || 0;
+      meshRef.current.position.y = initialY - scrollY * scrollMultiplier * 2;
 
-      // Apply subtle animation
-      meshRef.current.position.y =
-        (position instanceof Vector3 ? position.y : position[1]) +
-        Math.sin(clock.getElapsedTime() * 0.2) * 0.05;
-
-      // Apply scroll effect if scroll context is available
-      if (scrollContext && scrollContext.scrollYProgress) {
-        const scrollOffset =
-          scrollContext.scrollYProgress.current * scrollMultiplier;
-        meshRef.current.position.z =
-          (position instanceof Vector3 ? position.z : position[2]) -
-          scrollOffset * 5;
-        meshRef.current.rotation.x += scrollOffset * 0.1;
+      // Apply hover scale effect
+      if (isHovered) {
+        meshRef.current.scale.lerp(
+          new Vector3(hoverScale, hoverScale, hoverScale),
+          0.1
+        );
+      } else {
+        meshRef.current.scale.lerp(new Vector3(1, 1, 1), 0.1);
       }
-    } catch (error) {
-      console.error("Error in mountain animation:", error);
-      setHasError(true);
     }
   });
 
-  // If there's an error, render a simplified mountain
-  if (hasError) {
-    return (
-      <mesh
-        position={
-          position instanceof Vector3 ? position : new Vector3(...position)
-        }
-      >
-        <coneGeometry args={[5, 10, 16]} />
-        <meshStandardMaterial
-          color={color}
-          wireframe={wireframe}
-          roughness={0.8}
-          metalness={0.1}
-        />
-      </mesh>
-    );
-  }
+  // Optimize mesh updates
+  useEffect(() => {
+    if (meshRef.current) {
+      const timer = setTimeout(() => {
+        // Reduce update frequency to save performance
+        meshRef.current!.matrixAutoUpdate = false;
+        meshRef.current!.updateMatrix();
+      }, 5000); // After 5 seconds, reduce update frequency
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   return (
     <mesh
       ref={meshRef}
-      position={
-        position instanceof Vector3 ? position : new Vector3(...position)
-      }
-      receiveShadow
+      position={position}
+      onPointerOver={() => setIsHovered(true)}
+      onPointerOut={() => setIsHovered(false)}
       castShadow
+      receiveShadow
     >
-      <bufferGeometry attach="geometry" {...geometry} />
-      <meshStandardMaterial
-        color={color}
-        wireframe={wireframe}
-        roughness={0.7}
-        metalness={0.1}
-      />
+      {geometry}
+
+      {materialType === "wobble" ? (
+        <MeshWobbleMaterial
+          color={color}
+          wireframe={wireframe}
+          factor={wobbleStrength} // Wobble strength
+          speed={wobbleSpeed} // Wobble speed
+          roughness={0.4}
+          metalness={0.1}
+          map={textureMap}
+        />
+      ) : materialType === "physical" ? (
+        <meshPhysicalMaterial
+          color={color}
+          wireframe={wireframe}
+          roughness={0.5}
+          metalness={0.2}
+          clearcoat={0.3}
+          clearcoatRoughness={0.25}
+          map={textureMap}
+        />
+      ) : materialType === "toon" ? (
+        <meshToonMaterial
+          color={color}
+          wireframe={wireframe}
+          map={textureMap}
+        />
+      ) : (
+        <meshStandardMaterial
+          color={color}
+          wireframe={wireframe}
+          roughness={0.7}
+          metalness={0.1}
+          map={textureMap}
+        />
+      )}
     </mesh>
   );
 }
 
-// Helper function to generate mountain geometry with noise
+// Generate mountain geometry with noise
 function generateMountainGeometry(
   detail: number,
-  sizeX: number,
-  sizeY: number,
-  sizeZ: number,
-  noise2D: (x: number, y: number) => number
+  size: number,
+  noiseScale: number,
+  noiseAmplitude: number
 ) {
-  // Create a cone geometry as base
-  const geometry = new ConeGeometry(sizeX / 2, sizeY, detail, 1, true);
+  // Clamp detail to avoid performance issues
+  const safeDetail = Math.min(Math.max(detail, 0.5), 2);
+  const segments = Math.floor(16 * safeDetail);
 
-  // Get vertices
-  const positionAttribute = geometry.getAttribute("position");
-  const positions = positionAttribute.array;
+  // Use simplex noise for performance
+  const simplex = new SimplexNoise();
 
-  // Apply noise to vertices
-  for (let i = 0; i < positions.length; i += 3) {
-    const x = positions[i];
-    const y = positions[i + 1];
-    const z = positions[i + 2];
-
-    // Skip the top vertex of the cone
-    if (y !== sizeY / 2) {
-      const distance = Math.sqrt(x * x + z * z);
-      const noise =
-        noise2D(x * 0.1, z * 0.1) * 0.2 + noise2D(x * 0.01, z * 0.01) * 0.8;
-
-      // Apply noise based on distance from center and height
-      const noiseAmount = (1 - y / sizeY) * noise * sizeY * 0.2;
-
-      // Update position with noise
-      positions[i] += x * noiseAmount * 0.2;
-      positions[i + 1] += noiseAmount;
-      positions[i + 2] += z * noiseAmount * 0.2;
-    }
-  }
-
-  // Update geometry
-  positionAttribute.needsUpdate = true;
-  geometry.computeVertexNormals();
+  // Create cone geometry with specified segments
+  const geometry = <coneGeometry args={[size, size * 2, segments, 1, false]} />;
 
   return geometry;
 }
-
-export default Mountain;

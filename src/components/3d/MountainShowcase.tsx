@@ -1,323 +1,313 @@
 "use client";
 
-import React, { useState, useRef, useEffect, Suspense } from "react";
-import dynamic from "next/dynamic";
-import { motion } from "framer-motion";
-import { FiMapPin, FiArrowRight } from "react-icons/fi";
-import { Button } from "@/components/ui/Button";
-import ErrorBoundary from "@/components/ErrorBoundary";
+import React, { useState, useEffect, useRef } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import SceneWrapper from "./SceneWrapper";
+import Mountain from "./Mountain";
+import { Spinner } from "../ui/Spinner";
+import { FiInfo } from "react-icons/fi";
+import SectionHeading from "../ui/SectionHeading";
 
-// Dynamically import components with error handling
-const SceneWrapper = dynamic(() => import("./SceneWrapper"), {
-  ssr: false,
-  loading: () => <LoadingSpinner />,
-});
+// Define mountain colors for a consistent palette
+const MOUNTAIN_COLORS = {
+  primary: "#3b82f6", // Blue
+  secondary: "#4f46e5", // Indigo
+  accent: "#8b5cf6", // Purple
+  dark: "#1f2937", // Dark gray
+};
 
-const Mountain = dynamic(() => import("./Mountain"), {
-  ssr: false,
-});
-
-const Cloud = dynamic(() => import("./Cloud"), {
-  ssr: false,
-});
-
-// Simple loading spinner
-function LoadingSpinner() {
-  return (
-    <div className="flex items-center justify-center h-full min-h-[300px]">
-      <div className="w-12 h-12 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
-    </div>
-  );
-}
-
-// Simple fallback when 3D elements fail
-function Fallback() {
-  return (
-    <div className="bg-gradient-to-b from-indigo-900 to-gray-900 p-8 rounded-lg text-white text-center">
-      <h3 className="text-xl font-bold mb-4">3D View Unavailable</h3>
-      <p>We couldn't load the interactive 3D mountain view</p>
-    </div>
-  );
-}
-
-interface MountainShowcaseProps {
-  className?: string;
-}
-
-function MountainShowcase({ className = "" }: MountainShowcaseProps) {
-  const [mousePosition, setMousePosition] = useState({ x: 0.5, y: 0.5 });
-  const containerRef = useRef<HTMLDivElement>(null);
+export default function MountainShowcase() {
   const [isClient, setIsClient] = useState(false);
-  const [activeMountain, setActiveMountain] = useState(0);
-  const [hasError, setHasError] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showFallback, setShowFallback] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [devicePerformance, setDevicePerformance] = useState<
+    "low" | "medium" | "high"
+  >("medium");
+  const [loadProgress, setLoadProgress] = useState(0);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const mountedRef = useRef(true);
 
-  // South Asian mountain destinations
-  const destinations = [
-    {
-      name: "Everest Region",
-      location: "Nepal",
-      description: "Home to the world's tallest peak, the majestic Mt. Everest",
-      color: "#3b82f6",
-    },
-    {
-      name: "Annapurna Circuit",
-      location: "Nepal",
-      description:
-        "One of the most diverse and spectacular trekking routes in the world",
-      color: "#8b5cf6",
-    },
-    {
-      name: "Karakoram Range",
-      location: "Pakistan",
-      description: "Home to K2, the second-highest mountain on Earth",
-      color: "#10b981",
-    },
-  ];
+  // Initialize client state and set up error handling
+  useEffect(() => {
+    setIsClient(true);
+
+    // Simulate load progress
+    const loadInterval = setInterval(() => {
+      if (mountedRef.current) {
+        setLoadProgress((prev) => {
+          const newProgress = Math.min(prev + Math.random() * 15, 90);
+          return newProgress;
+        });
+      }
+    }, 300);
+
+    // Set a timeout to show fallback if 3D scene takes too long to load
+    loadTimeoutRef.current = setTimeout(() => {
+      if (mountedRef.current) {
+        console.warn("3D scene load timeout exceeded, showing fallback");
+        clearInterval(loadInterval);
+        setShowFallback(true);
+      }
+    }, 6000);
+
+    // Check for WebGL compatibility
+    try {
+      const canvas = document.createElement("canvas");
+      const gl =
+        canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+
+      if (!gl) {
+        setLoadError("WebGL not supported by your browser");
+        setShowFallback(true);
+        clearInterval(loadInterval);
+
+        if (loadTimeoutRef.current) {
+          clearTimeout(loadTimeoutRef.current);
+        }
+      }
+
+      // Detect device capabilities for optimal mountain detail
+      const detectDevicePerformance = () => {
+        // Check if user is in specific regions
+        try {
+          const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const southAsianRegions = [
+            "Asia/Kolkata", // India
+            "Asia/Colombo", // Sri Lanka
+            "Asia/Dhaka", // Bangladesh
+            "Asia/Kathmandu", // Nepal
+            "Asia/Karachi", // Pakistan
+          ];
+
+          if (southAsianRegions.some((r) => userTimezone.includes(r))) {
+            return "low";
+          }
+        } catch (e) {
+          console.warn("Unable to detect region");
+        }
+
+        // Check for mobile devices
+        const isMobile =
+          /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+            navigator.userAgent
+          );
+
+        // Check hardware capabilities
+        const hasWeakHardware =
+          (navigator.hardwareConcurrency &&
+            navigator.hardwareConcurrency <= 4) ||
+          (navigator.deviceMemory && navigator.deviceMemory <= 4);
+
+        if (isMobile || hasWeakHardware) {
+          return "medium";
+        }
+
+        return "high";
+      };
+
+      setDevicePerformance(detectDevicePerformance());
+    } catch (err) {
+      setLoadError("Error initializing 3D experience");
+      setShowFallback(true);
+
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    }
+
+    return () => {
+      mountedRef.current = false;
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle mouse movement for parallax effect
   useEffect(() => {
-    try {
-      setIsClient(true);
+    if (!isClient) return;
 
-      const handleMouseMove = (e: MouseEvent) => {
-        if (!containerRef.current) return;
+    const handleMouseMove = (e: MouseEvent) => {
+      // Normalize mouse position to -0.5 to 0.5 range
+      const x = e.clientX / window.innerWidth - 0.5;
+      const y = e.clientY / window.innerHeight - 0.5;
+      setMousePosition({ x, y });
+    };
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / rect.width;
-        const y = (e.clientY - rect.top) / rect.height;
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [isClient]);
 
-        setMousePosition({ x, y });
-      };
-
-      const container = containerRef.current;
-      if (container) {
-        container.addEventListener("mousemove", handleMouseMove);
-      }
-
-      // Auto-rotation for the featured mountains
-      const interval = setInterval(() => {
-        setActiveMountain((prev) => (prev + 1) % destinations.length);
-      }, 8000);
-
-      return () => {
-        if (container) {
-          container.removeEventListener("mousemove", handleMouseMove);
-        }
-        clearInterval(interval);
-      };
-    } catch (error) {
-      console.error("Error in MountainShowcase useEffect:", error);
-      setHasError(true);
+  // Handle successful 3D scene load
+  const handleSceneLoaded = () => {
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
     }
-  }, [destinations.length]);
 
-  // Don't render anything on server-side
+    setLoadProgress(100);
+
+    // Short delay to smooth transition
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+  };
+
+  // Performance optimization - adjust detail level based on device capability
+  const getMountainDetail = (baseDetail: number) => {
+    switch (devicePerformance) {
+      case "low":
+        return Math.max(baseDetail * 0.5, 8);
+      case "medium":
+        return Math.max(baseDetail * 0.75, 12);
+      case "high":
+        return baseDetail;
+      default:
+        return baseDetail;
+    }
+  };
+
+  // Fallback image display when 3D is not supported or loading is slow
+  const FallbackDisplay = () => (
+    <div className="relative w-full h-[50vh] md:h-[60vh] overflow-hidden rounded-xl">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/70 to-indigo-900/80 z-10" />
+      <Image
+        src="/images/mountain-backdrop.jpg"
+        alt="South Asian Mountain Range"
+        fill
+        className="object-cover"
+        priority
+      />
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-20 p-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <SectionHeading
+            title="Discover South Asia's Majestic Mountains"
+            subtitle="Experience the beauty of the Himalayas"
+            align="center"
+            titleSize="large"
+          />
+          {loadError && (
+            <div className="mt-4 flex items-center justify-center text-amber-300 bg-amber-900/40 py-2 px-4 rounded-md">
+              <FiInfo className="mr-2" />
+              <p>{loadError}</p>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </div>
+  );
+
   if (!isClient) {
     return (
-      <div
-        className={`relative min-h-[80vh] flex items-center justify-center bg-gradient-to-b from-indigo-900 to-gray-900 ${className}`}
-      >
-        <div className="w-12 h-12 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
-
-  // Show fallback if there's an error
-  if (hasError) {
-    return (
-      <div className={`relative min-h-[80vh] ${className}`}>
-        <div className="absolute inset-0 bg-gradient-to-b from-indigo-900 to-gray-900" />
-        <div className="relative z-10 container mx-auto px-6 h-full flex items-center justify-center">
-          <div className="max-w-md text-center text-white p-8">
-            <h2 className="text-3xl font-bold mb-4">
-              Experience the Himalayas
-            </h2>
-            <p className="mb-6">
-              Explore the majestic mountain ranges of South Asia with our guided
-              tours
-            </p>
-            <Button href="/tours" variant="primary" size="lg" rounded>
-              View Tours
-            </Button>
-          </div>
-        </div>
-      </div>
+      <div className="w-full h-[50vh] bg-gray-900 animate-pulse rounded-xl" />
     );
   }
 
   return (
-    <div
-      ref={containerRef}
-      className={`relative min-h-[80vh] ${className} overflow-hidden`}
-    >
-      <ErrorBoundary
-        fallback={
-          <div className="w-full h-full min-h-[80vh] bg-gradient-to-b from-indigo-900 to-gray-900 flex items-center justify-center">
-            <div className="text-white text-center max-w-md p-8">
-              <h2 className="text-3xl font-bold mb-4">3D View Unavailable</h2>
-              <p className="mb-6">
-                We couldn't load the 3D mountain experience, but you can still
-                explore our tours.
-              </p>
-              <Button href="/tours" variant="primary" rounded>
-                View Tours
-              </Button>
-            </div>
-          </div>
-        }
-      >
-        <SceneWrapper
-          className="min-h-[80vh]"
-          background="#070B34"
-          cameraPosition={[0, 2, 12]}
-          controls={true}
-          enableZoom={false}
-          environment="night"
-        >
-          <hemisphereLight args={["#8cb2ff", "#070B34", 0.7]} />
-          <ambientLight intensity={0.1} />
-          <directionalLight
-            position={[5, 8, 10]}
-            intensity={0.7}
-            castShadow
-            color="#fff"
-          />
-
-          {/* Featured mountains - positioned for a layered look */}
-          <Suspense fallback={null}>
-            <ErrorBoundary fallback={<Fallback />}>
-              <Mountain
-                position={[0, -3, 0]}
-                scrollMultiplier={0.6}
-                color={destinations[activeMountain].color}
-                wireframe={false}
-                size={[11, 6, 11]}
-                detail={40}
-                mouseX={mousePosition.x}
-                mouseY={mousePosition.y}
-              />
-              <Mountain
-                position={[-8, -4, -5]}
-                scrollMultiplier={0.3}
-                color="#1F2A40"
-                wireframe={false}
-                size={[8, 4, 8]}
-                detail={30}
-                mouseX={mousePosition.x}
-                mouseY={mousePosition.y}
-              />
-              <Mountain
-                position={[7, -5, -8]}
-                scrollMultiplier={0.2}
-                color="#12172F"
-                wireframe={false}
-                size={[9, 5, 9]}
-                detail={24}
-                mouseX={mousePosition.x}
-                mouseY={mousePosition.y}
-              />
-
-              {/* Add clouds for atmosphere */}
-              <Cloud
-                position={[-3, 2, -2]}
-                scale={2.5}
-                opacity={0.8}
-                scrollMultiplier={0.7}
-                speed={0.02}
-                noiseScale={0.6}
-                segments={4}
-              />
-              <Cloud
-                position={[4, 3, -4]}
-                scale={2}
-                opacity={0.6}
-                scrollMultiplier={0.4}
-                speed={0.015}
-                noiseScale={0.4}
-                segments={3}
-              />
-              <Cloud
-                position={[0, 4, -6]}
-                scale={3}
-                opacity={0.5}
-                scrollMultiplier={0.2}
-                speed={0.01}
-                noiseScale={0.5}
-                segments={5}
-              />
-            </ErrorBoundary>
-          </Suspense>
-        </SceneWrapper>
-      </ErrorBoundary>
-
-      {/* Gradient overlay */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-900 pointer-events-none"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.7 }}
-        transition={{ duration: 1 }}
-      />
-
-      {/* Content overlay */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="container mx-auto px-6">
-          <div className="max-w-2xl mx-auto bg-black/30 backdrop-blur-sm p-8 rounded-xl pointer-events-auto">
-            <motion.div
-              key={activeMountain}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="flex items-center mb-3">
-                <FiMapPin className="text-pink-500 mr-2" />
-                <span className="text-pink-400 text-sm font-medium">
-                  {destinations[activeMountain].location}
-                </span>
+    <div className="relative w-full overflow-hidden rounded-xl">
+      <AnimatePresence mode="wait">
+        {isLoading && (
+          <motion.div
+            key="spinner"
+            className="absolute inset-0 flex items-center justify-center bg-gray-900 z-20"
+            exit={{ opacity: 0 }}
+          >
+            <div className="flex flex-col items-center">
+              <Spinner size="lg" />
+              <div className="mt-4 w-64 h-2 bg-gray-800 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-blue-500 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${loadProgress}%` }}
+                  transition={{ type: "spring", bounce: 0 }}
+                />
               </div>
-
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-3">
-                {destinations[activeMountain].name}
-              </h2>
-
-              <p className="text-gray-200 text-lg mb-6">
-                {destinations[activeMountain].description}
+              <p className="text-white/70 text-sm mt-2">
+                Loading mountains ({loadProgress.toFixed(0)}%)
               </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-              <Button
-                href={`/tours?region=${encodeURIComponent(
-                  destinations[activeMountain].name
-                )}`}
-                variant="primary"
-                rounded
-                animate
-                icon={<FiArrowRight />}
-                iconPosition="right"
-              >
-                Explore Tours
-              </Button>
+      {showFallback ? (
+        <FallbackDisplay />
+      ) : (
+        <div className="w-full h-[50vh] md:h-[60vh] lg:h-[70vh]">
+          <SceneWrapper
+            onLoaded={handleSceneLoaded}
+            onError={(error) => {
+              console.error("Mountain scene error:", error);
+              setLoadError("Error loading 3D scene");
+              setShowFallback(true);
+            }}
+            cameraPosition={[0, 2, 7]}
+          >
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+
+            <Mountain
+              position={[-1.5, -1, 0]}
+              color={MOUNTAIN_COLORS.primary}
+              size={3}
+              detail={getMountainDetail(
+                isClient && window.innerWidth < 768 ? 12 : 24
+              )}
+              materialType={
+                devicePerformance === "high" ? "physical" : "standard"
+              }
+            />
+
+            <Mountain
+              position={[1.5, -1.2, -2]}
+              color={MOUNTAIN_COLORS.secondary}
+              size={2.5}
+              detail={getMountainDetail(
+                isClient && window.innerWidth < 768 ? 10 : 20
+              )}
+              materialType={
+                devicePerformance === "high" ? "physical" : "standard"
+              }
+            />
+
+            <Mountain
+              position={[0, -1.5, -4]}
+              color={MOUNTAIN_COLORS.dark}
+              size={4}
+              detail={getMountainDetail(
+                isClient && window.innerWidth < 768 ? 8 : 16
+              )}
+              materialType={
+                devicePerformance === "high" ? "physical" : "standard"
+              }
+            />
+          </SceneWrapper>
+
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent z-10" />
+          <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 20 : 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="text-center px-4"
+            >
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+                Discover South Asia's Majestic Mountains
+              </h2>
+              <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto drop-shadow-md">
+                Experience breathtaking vistas, ancient cultures, and
+                unforgettable adventures
+              </p>
             </motion.div>
           </div>
         </div>
-      </div>
-
-      {/* Mountain selection indicators */}
-      <div className="absolute bottom-10 left-0 right-0 flex justify-center gap-3">
-        {destinations.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setActiveMountain(index)}
-            className={`w-3 h-3 rounded-full transition-all ${
-              index === activeMountain
-                ? "bg-white w-10"
-                : "bg-gray-400/50 hover:bg-gray-300/70"
-            }`}
-            aria-label={`View ${destinations[index].name}`}
-          />
-        ))}
-      </div>
+      )}
     </div>
   );
 }
-
-export default MountainShowcase;

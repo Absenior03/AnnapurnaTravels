@@ -28,10 +28,41 @@ function Cloud({
 }: CloudProps) {
   const meshRef = useRef<THREE.Group>(null);
   const [hasError, setHasError] = useState(false);
+  const [optimizeForRegion, setOptimizeForRegion] = useState(false);
+
+  // Check if we need special optimization for this region
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Check if user is in specific regions
+    try {
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const southAsianRegions = [
+        "Asia/Kolkata", // India
+        "Asia/Colombo", // Sri Lanka
+        "Asia/Dhaka", // Bangladesh
+        "Asia/Kathmandu", // Nepal
+        "Asia/Karachi", // Pakistan
+      ];
+
+      if (southAsianRegions.some((r) => userTimezone.includes(r))) {
+        setOptimizeForRegion(true);
+      }
+    } catch (e) {
+      // If we can't detect region, assume we should optimize
+      setOptimizeForRegion(true);
+    }
+  }, []);
 
   // Use natural spring physics for the cloud's movement
-  const springX = useMotionSpring(0, { stiffness: 100, damping: 30 });
-  const springY = useMotionSpring(0, { stiffness: 80, damping: 20 });
+  const springX = useMotionSpring(0, {
+    stiffness: optimizeForRegion ? 50 : 100,
+    damping: optimizeForRegion ? 20 : 30,
+  });
+  const springY = useMotionSpring(0, {
+    stiffness: optimizeForRegion ? 40 : 80,
+    damping: optimizeForRegion ? 15 : 20,
+  });
 
   // Try to use scroll context but don't require it
   let scrollContext;
@@ -48,7 +79,10 @@ function Cloud({
     try {
       const particles = [];
       // Number of spheres depends on segments parameter
-      const count = segments * 2;
+      // Reduce particles in optimized regions
+      const count = optimizeForRegion
+        ? Math.min(segments, 4) * 2
+        : segments * 2;
 
       for (let i = 0; i < count; i++) {
         // Random positions for spheres with a more natural cloud shape
@@ -79,7 +113,7 @@ function Cloud({
         { position: [-0.5, 0.1, -0.5], size: 0.9, opacity: opacity * 0.9 },
       ];
     }
-  }, [segments, noiseScale, opacity]);
+  }, [segments, noiseScale, opacity, optimizeForRegion]);
 
   // Update spring values on scroll with error handling
   useEffect(() => {
@@ -88,8 +122,12 @@ function Cloud({
 
       const unsubscribe = scrollContext.scrollYProgress.onChange(
         (latest: number) => {
-          springX.set(latest * scrollMultiplier * -5);
-          springY.set(latest * scrollMultiplier * 2);
+          // Reduce effects in optimized regions
+          const multiplier = optimizeForRegion
+            ? scrollMultiplier * 0.5
+            : scrollMultiplier;
+          springX.set(latest * multiplier * -5);
+          springY.set(latest * multiplier * 2);
         }
       );
 
@@ -100,7 +138,7 @@ function Cloud({
       console.error("Error in cloud scroll effect:", error);
       setHasError(true);
     }
-  }, [scrollContext, scrollMultiplier, springX, springY]);
+  }, [scrollContext, scrollMultiplier, springX, springY, optimizeForRegion]);
 
   // Animation with error handling
   useFrame(({ clock }) => {
@@ -114,13 +152,20 @@ function Cloud({
       // Time-based animation
       const time = clock.getElapsedTime();
 
+      // Reduce animation frequency in optimized regions
+      const animSpeed = optimizeForRegion ? speed * 0.5 : speed;
+
       // Subtle floating animation with multiple frequencies
       const floatY =
-        Math.sin(time * speed * 0.5) * 0.2 + Math.sin(time * speed * 0.3) * 0.1;
+        Math.sin(time * animSpeed * 0.5) * 0.2 +
+        Math.sin(time * animSpeed * 0.3) * 0.1;
 
-      // Subtle rotation for more natural movement
-      meshRef.current.rotation.y = Math.sin(time * speed) * 0.1;
-      meshRef.current.rotation.z = Math.cos(time * speed * 0.7) * 0.05;
+      // Apply animations only every other frame for optimized regions to improve performance
+      if (!optimizeForRegion || Math.floor(time * 10) % 2 === 0) {
+        // Subtle rotation for more natural movement
+        meshRef.current.rotation.y = Math.sin(time * animSpeed) * 0.1;
+        meshRef.current.rotation.z = Math.cos(time * animSpeed * 0.7) * 0.05;
+      }
 
       // Update position with spring physics values
       meshRef.current.position.set(
@@ -170,14 +215,21 @@ function Cloud({
           key={index}
           position={particle.position as [number, number, number]}
         >
-          <sphereGeometry args={[particle.size, 12, 12]} />
+          {/* Use simpler geometry in optimized regions */}
+          <sphereGeometry
+            args={[
+              particle.size,
+              optimizeForRegion ? 6 : 12,
+              optimizeForRegion ? 6 : 12,
+            ]}
+          />
           <meshStandardMaterial
             color={color}
             transparent
             opacity={particle.opacity}
             roughness={0.8}
             metalness={0.1}
-            envMapIntensity={1.5}
+            envMapIntensity={optimizeForRegion ? 1.0 : 1.5}
           />
         </mesh>
       ))}

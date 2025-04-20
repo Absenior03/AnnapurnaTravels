@@ -32,6 +32,10 @@ import CTA from "@/components/sections/CTA";
 import ToursShowcase from "@/components/sections/ToursShowcase";
 import { Button } from "@/components/ui/Button";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { shouldOptimizeForRegion } from "./3d-showcase/region-optimization";
+import FeaturedTourCard from "@/components/tours/FeaturedTourCard";
+import { getTours } from "@/lib/tours";
+import { getTestimonials } from "@/lib/testimonials";
 
 // Import the ScrollScene component with dynamic loading
 // This is necessary because it uses client-side only features like Three.js
@@ -40,21 +44,23 @@ const ScrollScene = dynamic(
   { ssr: false }
 );
 
-// Import the MountainShowcase component with dynamic loading
+// Import the MountainShowcase component with a simpler fallback that will work in all regions
 const MountainShowcase = dynamic(
   () => import("@/components/3d/MountainShowcase"),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <LoadingScreen />,
+  }
 );
 
 // Loading screen shown while the 3D scene is loading
 function LoadingScreen() {
   return (
-    <div className="w-full h-screen flex flex-col items-center justify-center bg-gradient-to-b from-blue-900 to-indigo-900 text-white">
-      <div className="w-24 h-24 border-8 border-t-emerald-500 border-b-emerald-700 border-l-transparent border-r-transparent rounded-full animate-spin mb-8"></div>
-      <h2 className="text-2xl font-bold mb-2">Loading 3D Experience</h2>
-      <p className="text-gray-300">
-        Preparing your journey through South Asia...
-      </p>
+    <div className="relative flex h-[500px] w-full items-center justify-center bg-gradient-to-b from-blue-900 to-indigo-900 text-white">
+      <div className="flex flex-col items-center">
+        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-t-4 border-blue-500 border-opacity-50"></div>
+        <p className="text-xl font-light">Loading 3D Experience...</p>
+      </div>
     </div>
   );
 }
@@ -123,12 +129,62 @@ const MountainShowcaseFallback = () => (
   </section>
 );
 
+// Add a function to check if we should show the 3D content
+function useShow3D() {
+  const [show3D, setShow3D] = useState(false);
+
+  useEffect(() => {
+    // Only enable 3D in supported regions with good performance
+    const checkCapability = () => {
+      if (shouldOptimizeForRegion()) {
+        return false;
+      }
+
+      // Additional checks for performance capability
+      const hasGoodPerformance =
+        (navigator.hardwareConcurrency && navigator.hardwareConcurrency > 4) ||
+        !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
+      return hasGoodPerformance;
+    };
+
+    setShow3D(checkCapability());
+  }, []);
+
+  return show3D;
+}
+
+// Error boundary wrapper for 3D components
+function SafeThreeDComponent({
+  component: Component,
+  fallback = <ThreeDFallback />,
+}) {
+  // Client-side only
+  if (typeof window === "undefined") {
+    return fallback;
+  }
+
+  try {
+    return (
+      <Suspense fallback={<LoadingScreen />}>
+        <Component fallbackImage="/images/mountains-fallback.jpg" />
+      </Suspense>
+    );
+  } catch (error) {
+    console.error("Failed to render 3D component:", error);
+    return fallback;
+  }
+}
+
 // Main Home page component
 export default function Home() {
   const [featuredTours, setFeaturedTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const show3D = useShow3D();
 
   useEffect(() => {
     async function loadData() {
@@ -215,6 +271,9 @@ export default function Home() {
     },
   ];
 
+  const tours = getTours().slice(0, 3);
+  const testimonials = getTestimonials().slice(0, 3);
+
   return (
     <>
       <Navbar />
@@ -266,15 +325,15 @@ export default function Home() {
           {/* Mountain Showcase Section */}
           <section id="mountains" className="py-20 md:py-32 relative">
             <ErrorBoundary fallback={<MountainShowcaseFallback />}>
-              <Suspense
-                fallback={
-                  <div className="h-96 flex items-center justify-center">
-                    <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
-                  </div>
-                }
-              >
-                <MountainShowcase />
-              </Suspense>
+              {show3D ? (
+                <div className="hidden md:block">
+                  <Suspense fallback={<MountainShowcaseFallback />}>
+                    <SafeThreeDComponent component={MountainShowcase} />
+                  </Suspense>
+                </div>
+              ) : (
+                <MountainShowcaseFallback />
+              )}
             </ErrorBoundary>
           </section>
 
