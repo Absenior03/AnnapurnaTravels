@@ -4,45 +4,15 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { FiChevronLeft, FiChevronRight, FiStar } from "react-icons/fi";
+import { getTestimonials, Testimonial } from "@/lib/testimonials";
 
-interface Testimonial {
-  id: number;
-  name: string;
-  location: string;
-  image: string;
-  rating: number;
-  text: string;
-}
-
-const testimonials: Testimonial[] = [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    location: "United Kingdom",
-    image: "https://randomuser.me/api/portraits/women/1.jpg",
-    rating: 5,
-    text: "The South Asian adventure with ATAT was truly life-changing. Our guide was knowledgeable and passionate, making the experience unforgettable.",
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    location: "United States",
-    image: "https://randomuser.me/api/portraits/men/2.jpg",
-    rating: 5,
-    text: "Trekking through the Himalayas with ATAT exceeded all my expectations. The attention to detail and safety measures were impressive.",
-  },
-  {
-    id: 3,
-    name: "Elena Petrova",
-    location: "Russia",
-    image: "https://randomuser.me/api/portraits/women/3.jpg",
-    rating: 5,
-    text: "The cultural immersion across South Asia was unparalleled. ATAT provided authentic experiences while respecting local traditions.",
-  },
-];
+// Load testimonials from the library
+const testimonialsList = getTestimonials().slice(0, 6);
 
 const Testimonials: React.FC = () => {
   const [active, setActive] = useState(0);
+  const [testimonials, setTestimonials] =
+    useState<Testimonial[]>(testimonialsList);
 
   // Auto-rotate testimonials
   useEffect(() => {
@@ -51,7 +21,7 @@ const Testimonials: React.FC = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [testimonials.length]);
 
   const next = () => {
     setActive((prev) => (prev + 1) % testimonials.length);
@@ -110,6 +80,12 @@ const Testimonials: React.FC = () => {
               <div className="text-gray-300 text-sm">
                 {testimonials[active].location}
               </div>
+
+              {testimonials[active].tourName && (
+                <div className="mt-1 text-emerald-300 text-sm">
+                  {testimonials[active].tourName}
+                </div>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>

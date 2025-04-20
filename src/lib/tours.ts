@@ -404,3 +404,27 @@ export async function getFeaturedTours(count: number = 3): Promise<Tour[]> {
     return sampleTours.filter((tour) => tour.featured).slice(0, count);
   }
 }
+
+/**
+ * Get all tours synchronously (for SSR/SSG)
+ * This is a non-async version that returns the sample data directly
+ * Used on pages that need to render tours during static generation
+ */
+export function getTours(): Tour[] {
+  return sampleTours;
+}
+
+/**
+ * Get a specific number of featured tours synchronously (for SSR/SSG)
+ */
+export function getFeaturedToursSync(count: number = 3): Tour[] {
+  return sampleTours.filter((tour) => tour.featured).slice(0, count);
+}
+
+/**
+ * Get a specific tour by ID synchronously (for SSR/SSG)
+ */
+export function getTourSync(id: string): Tour | null {
+  const tour = sampleTours.find((tour) => tour.id === id);
+  return tour || null;
+}
