@@ -9,12 +9,17 @@ import { useGLTF } from "@react-three/drei";
 useGLTF.preload("/models/mountain.glb");
 useGLTF.preload("/models/compass.glb");
 
+// Define modern Three.js constants for color encoding
+// These replace the deprecated LinearEncoding and sRGBEncoding
+const LINEAR_ENCODING = THREE.LinearSRGBColorSpace || 3000;
+const SRGB_ENCODING = THREE.SRGBColorSpace || 3001;
+
 interface PerformanceSettings {
   pixelRatio: number;
   shadowMapEnabled: boolean;
   shadowMapType: THREE.ShadowMapType;
   maxAnisotropy: number;
-  outputEncoding: THREE.TextureEncoding;
+  outputEncoding: number; // Changed from THREE.TextureEncoding to number
   antialias: boolean;
   maxLights: number;
 }
@@ -32,7 +37,7 @@ const PERFORMANCE_PROFILES = {
     shadowMapEnabled: false,
     shadowMapType: THREE.BasicShadowMap,
     maxAnisotropy: 1,
-    outputEncoding: THREE.LinearEncoding,
+    outputEncoding: LINEAR_ENCODING,
     antialias: false,
     maxLights: 2,
   },
@@ -41,7 +46,7 @@ const PERFORMANCE_PROFILES = {
     shadowMapEnabled: true,
     shadowMapType: THREE.PCFShadowMap,
     maxAnisotropy: 4,
-    outputEncoding: THREE.sRGBEncoding,
+    outputEncoding: SRGB_ENCODING,
     antialias: true,
     maxLights: 4,
   },
@@ -50,7 +55,7 @@ const PERFORMANCE_PROFILES = {
     shadowMapEnabled: true,
     shadowMapType: THREE.PCFSoftShadowMap,
     maxAnisotropy: 16,
-    outputEncoding: THREE.sRGBEncoding,
+    outputEncoding: SRGB_ENCODING,
     antialias: true,
     maxLights: 8,
   },

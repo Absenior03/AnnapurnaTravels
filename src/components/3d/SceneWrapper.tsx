@@ -24,6 +24,10 @@ import { SpinnerCircular } from "../ui/Loader";
 import { Vector3 } from "three";
 import SceneController from "./SceneController";
 
+// Define modern Three.js constants for color encoding
+// These replace the deprecated LinearEncoding and sRGBEncoding
+const LINEAR_ENCODING = THREE.LinearSRGBColorSpace || 3000;
+
 // Options for environments that can be used with lower resource usage
 const LIGHTWEIGHT_ENVIRONMENTS = [
   "sunset",
@@ -122,7 +126,7 @@ function CameraController({
         gl.setPixelRatio(Math.min(1.5, window.devicePixelRatio));
         gl.shadowMap.enabled = false;
         gl.shadowMap.type = THREE.BasicShadowMap; // less demanding
-        gl.outputEncoding = THREE.LinearEncoding; // less demanding than sRGB
+        gl.outputEncoding = LINEAR_ENCODING; // less demanding than sRGB
       } else {
         gl.setPixelRatio(Math.min(2, window.devicePixelRatio));
       }

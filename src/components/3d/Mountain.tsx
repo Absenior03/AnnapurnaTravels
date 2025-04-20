@@ -4,7 +4,6 @@ import React, { useRef, useMemo, useEffect, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import { InstancedMesh, Color, Vector3 } from "three";
 import { MeshWobbleMaterial, useTexture } from "@react-three/drei";
-import SimplexNoise from "simplex-noise";
 
 interface MountainProps {
   position?: [number, number, number];
@@ -21,6 +20,14 @@ interface MountainProps {
   materialType?: "standard" | "physical" | "toon" | "wobble";
   texture?: string | null;
   hoverScale?: number;
+}
+
+// Simple noise function to replace SimplexNoise
+// This is a basic implementation that doesn't require an external library
+function simpleNoise(x: number, y: number): number {
+  // Simple pseudo-random noise function
+  const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+  return n - Math.floor(n);
 }
 
 export default function Mountain({
@@ -161,9 +168,6 @@ function generateMountainGeometry(
   // Clamp detail to avoid performance issues
   const safeDetail = Math.min(Math.max(detail, 0.5), 2);
   const segments = Math.floor(16 * safeDetail);
-
-  // Use simplex noise for performance
-  const simplex = new SimplexNoise();
 
   // Create cone geometry with specified segments
   const geometry = <coneGeometry args={[size, size * 2, segments, 1, false]} />;
