@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Vector3, ConeGeometry } from "three";
-import { useScrollContext } from "@/context/ScrollContext";
 import { createNoise2D } from "simplex-noise";
 
 interface MountainProps {
@@ -29,52 +28,98 @@ function Mountain({
   mouseY = 0.5,
 }: MountainProps) {
   const meshRef = useRef<THREE.Mesh>(null);
-  const noise2D = useMemo(() => createNoise2D(), []);
+  const [hasError, setHasError] = useState(false);
 
+  // Create noise function with error handling
+  const noise2D = useMemo(() => {
+    try {
+      return createNoise2D();
+    } catch (error) {
+      console.error("Error creating noise function:", error);
+      setHasError(true);
+      // Return a simple function that just returns 0 as fallback
+      return () => 0;
+    }
+  }, []);
+
+  // Try to use scroll context, but don't require it
   let scrollContext;
   try {
+    // Dynamically import to prevent SSR issues
+    const { useScrollContext } = require("@/context/ScrollContext");
     scrollContext = useScrollContext();
   } catch (error) {
-    // Handle case when not in ScrollContext
+    // Silent fail - just don't use scroll effects if not available
   }
 
-  // Generate mountain geometry with noise
+  // Generate mountain geometry with noise and error handling
   const geometry = useMemo(() => {
-    const sizeX = Array.isArray(size) ? size[0] : size;
-    const sizeY = Array.isArray(size) ? size[1] : size;
-    const sizeZ = Array.isArray(size) ? size[2] : size;
+    try {
+      const sizeX = Array.isArray(size) ? size[0] : size;
+      const sizeY = Array.isArray(size) ? size[1] : size;
+      const sizeZ = Array.isArray(size) ? size[2] : size;
 
-    return generateMountainGeometry(detail, sizeX, sizeY, sizeZ, noise2D);
+      return generateMountainGeometry(detail, sizeX, sizeY, sizeZ, noise2D);
+    } catch (error) {
+      console.error("Error generating mountain geometry:", error);
+      setHasError(true);
+      // Return a simple cone geometry as fallback
+      return new ConeGeometry(5, 10, 16);
+    }
   }, [size, detail, noise2D]);
 
-  // Animation
+  // Animation with error handling
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || hasError) return;
 
-    // Apply mouse movement for parallax effect
-    const rotationX = (mouseY - 0.5) * 0.1;
-    const rotationY = (mouseX - 0.5) * 0.1;
+    try {
+      // Apply mouse movement for parallax effect
+      const rotationX = (mouseY - 0.5) * 0.1;
+      const rotationY = (mouseX - 0.5) * 0.1;
 
-    meshRef.current.rotation.x =
-      meshRef.current.rotation.x * 0.92 + rotationX * 0.08;
-    meshRef.current.rotation.y =
-      meshRef.current.rotation.y * 0.92 + rotationY * 0.08;
+      meshRef.current.rotation.x =
+        meshRef.current.rotation.x * 0.92 + rotationX * 0.08;
+      meshRef.current.rotation.y =
+        meshRef.current.rotation.y * 0.92 + rotationY * 0.08;
 
-    // Apply subtle animation
-    meshRef.current.position.y =
-      (position instanceof Vector3 ? position.y : position[1]) +
-      Math.sin(clock.getElapsedTime() * 0.2) * 0.05;
+      // Apply subtle animation
+      meshRef.current.position.y =
+        (position instanceof Vector3 ? position.y : position[1]) +
+        Math.sin(clock.getElapsedTime() * 0.2) * 0.05;
 
-    // Apply scroll effect if scroll context is available
-    if (scrollContext && scrollContext.scrollYProgress) {
-      const scrollOffset =
-        scrollContext.scrollYProgress.current * scrollMultiplier;
-      meshRef.current.position.z =
-        (position instanceof Vector3 ? position.z : position[2]) -
-        scrollOffset * 5;
-      meshRef.current.rotation.x += scrollOffset * 0.1;
+      // Apply scroll effect if scroll context is available
+      if (scrollContext && scrollContext.scrollYProgress) {
+        const scrollOffset =
+          scrollContext.scrollYProgress.current * scrollMultiplier;
+        meshRef.current.position.z =
+          (position instanceof Vector3 ? position.z : position[2]) -
+          scrollOffset * 5;
+        meshRef.current.rotation.x += scrollOffset * 0.1;
+      }
+    } catch (error) {
+      console.error("Error in mountain animation:", error);
+      setHasError(true);
     }
   });
+
+  // If there's an error, render a simplified mountain
+  if (hasError) {
+    return (
+      <mesh
+        position={
+          position instanceof Vector3 ? position : new Vector3(...position)
+        }
+      >
+        <coneGeometry args={[5, 10, 16]} />
+        <meshStandardMaterial
+          color={color}
+          wireframe={wireframe}
+          roughness={0.8}
+          metalness={0.1}
+        />
+      </mesh>
+    );
+  }
 
   return (
     <mesh

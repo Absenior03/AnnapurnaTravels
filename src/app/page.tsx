@@ -31,6 +31,7 @@ import Testimonials from "@/components/sections/Testimonials";
 import CTA from "@/components/sections/CTA";
 import ToursShowcase from "@/components/sections/ToursShowcase";
 import { Button } from "@/components/ui/Button";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Import the ScrollScene component with dynamic loading
 // This is necessary because it uses client-side only features like Three.js
@@ -93,6 +94,34 @@ const stats = [
   { id: 3, value: "10+", label: "Years Experience" },
   { id: 4, value: "4.9/5", label: "Traveler Rating" },
 ];
+
+// Mountain showcase fallback for errors
+const MountainShowcaseFallback = () => (
+  <section id="mountains" className="py-20 md:py-32 relative">
+    <div className="container mx-auto px-4">
+      <SectionHeading
+        title="Discover South Asia"
+        subtitle="Our tours take you through breathtaking landscapes"
+        align="center"
+        divider
+      />
+      <div className="mt-12 bg-gradient-to-b from-indigo-800 to-blue-900 rounded-lg min-h-[400px] flex items-center justify-center">
+        <div className="text-white text-center max-w-lg p-8">
+          <h3 className="text-2xl font-bold mb-3">
+            Spectacular Mountain Ranges
+          </h3>
+          <p className="mb-6">
+            Explore the majesty of the Himalayas and other magnificent mountain
+            ranges across South Asia
+          </p>
+          <Button href="/tours" variant="primary" size="lg" rounded>
+            View Tours
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+);
 
 // Main Home page component
 export default function Home() {
@@ -236,15 +265,17 @@ export default function Home() {
 
           {/* Mountain Showcase Section */}
           <section id="mountains" className="py-20 md:py-32 relative">
-            <Suspense
-              fallback={
-                <div className="h-96 flex items-center justify-center">
-                  <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
-                </div>
-              }
-            >
-              <MountainShowcase />
-            </Suspense>
+            <ErrorBoundary fallback={<MountainShowcaseFallback />}>
+              <Suspense
+                fallback={
+                  <div className="h-96 flex items-center justify-center">
+                    <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+                  </div>
+                }
+              >
+                <MountainShowcase />
+              </Suspense>
+            </ErrorBoundary>
           </section>
 
           {/* Tours Section */}

@@ -5,32 +5,56 @@ import dynamic from "next/dynamic";
 import SectionHeading from "@/components/ui/SectionHeading";
 import { Button } from "@/components/ui/Button";
 import { FiMap, FiCamera, FiHeart } from "react-icons/fi";
+import ErrorBoundary from "@/components/ErrorBoundary";
+
+// Fallback component while loading
+const LoadingFallback = () => (
+  <div className="h-[80vh] min-h-[600px] bg-gradient-to-b from-blue-900 to-black flex items-center justify-center">
+    <div className="text-white text-center">
+      <h2 className="text-3xl md:text-5xl font-bold mb-4">
+        Loading 3D Experience...
+      </h2>
+      <p className="text-lg opacity-80">
+        Please wait while we prepare your adventure
+      </p>
+    </div>
+  </div>
+);
+
+// Error fallback component
+const ErrorFallback = () => (
+  <div className="h-[80vh] min-h-[600px] bg-gradient-to-b from-red-900 to-black flex items-center justify-center">
+    <div className="text-white text-center max-w-md mx-auto p-8">
+      <h2 className="text-3xl md:text-4xl font-bold mb-4">
+        Oops! Something went wrong
+      </h2>
+      <p className="text-lg opacity-80 mb-6">
+        We couldn't load the 3D experience. Please try again later or explore
+        our other content.
+      </p>
+      <Button href="/tours" variant="white" size="lg">
+        Explore Tours
+      </Button>
+    </div>
+  </div>
+);
 
 // Dynamically import the 3D component with no SSR
 const MountainShowcase = dynamic(
   () => import("@/components/3d/MountainShowcase"),
   {
     ssr: false,
-    loading: () => (
-      <div className="h-[80vh] min-h-[600px] bg-gradient-to-b from-blue-900 to-black flex items-center justify-center">
-        <div className="text-white text-center">
-          <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Loading 3D Experience...
-          </h2>
-          <p className="text-lg opacity-80">
-            Please wait while we prepare your adventure
-          </p>
-        </div>
-      </div>
-    ),
+    loading: () => <LoadingFallback />,
   }
 );
 
 export default function ShowcasePage() {
   return (
     <main className="min-h-screen">
-      {/* Mountain Showcase */}
-      <MountainShowcase />
+      {/* Mountain Showcase with Error Boundary */}
+      <ErrorBoundary fallback={<ErrorFallback />}>
+        <MountainShowcase />
+      </ErrorBoundary>
 
       {/* Why Trek With Us Section */}
       <section className="py-20 bg-white">
