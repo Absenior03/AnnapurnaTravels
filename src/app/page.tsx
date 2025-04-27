@@ -29,6 +29,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { getTours } from "@/lib/tours";
 import { getTestimonials } from "@/lib/testimonials";
 import Hero from "@/components/Hero";
+import SafeHero from "@/components/hero/SafeHero";
 
 // ScrollPrompt component to guide users to scroll down
 const ScrollPrompt = () => (
@@ -228,13 +229,17 @@ export default function Home() {
           style={{ scaleX: scrollYProgress }}
         />
         
-        {/* Enhanced Hero Section with Parallax */}
-        <Hero 
-          title="Adventure Through South Asia"
-          subtitle="Discover breathtaking landscapes, ancient cultures, and unforgettable experiences"
-          imageUrl="/images/hero-bg.jpg"
-          tag="Explore Now"
-        />
+        {/* Enhanced Hero Section with 3D content and memory optimization */}
+        <ErrorBoundary fallback={
+          <Hero 
+            title="Adventure Through South Asia"
+            subtitle="Discover breathtaking landscapes, ancient cultures, and unforgettable experiences"
+            imageUrl="/images/hero-bg.jpg"
+            tag="Explore Now"
+          />
+        }>
+          <SafeHero />
+        </ErrorBoundary>
 
         {/* Mountain Showcase Section with animations */}
         <ErrorBoundary fallback={<div className="py-20 text-center">Unable to display mountain showcase</div>}>
