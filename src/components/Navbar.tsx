@@ -20,6 +20,7 @@ const navigation = [
   { name: "Tours", href: "/tours" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
+  { name: "UI Showcase", href: "/ui-showcase" },
 ];
 
 export default function Navbar() {
