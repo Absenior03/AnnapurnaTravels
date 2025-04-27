@@ -105,84 +105,6 @@ function LoadingScreen() {
   );
 }
 
-// Enhanced mountain showcase with better visuals
-const MountainShowcase = () => {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: false, amount: 0.3 });
-  
-  return (
-    <section id="mountains" ref={ref} className="py-20 md:py-32 relative overflow-hidden">
-      <div className="container mx-auto px-4">
-        <SectionHeading
-          title="Discover South Asia"
-          subtitle="Our tours take you through breathtaking landscapes"
-          align="center"
-          divider
-        />
-        
-        <motion.div 
-          className="mt-12 bg-gradient-to-b from-indigo-800 to-blue-900 rounded-lg min-h-[400px] relative overflow-hidden"
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={isInView ? 
-            { opacity: 1, scale: 1, transition: { duration: 0.8 }} : 
-            { opacity: 0, scale: 0.97 }
-          }
-        >
-          {/* Background particles effect */}
-          <div className="absolute inset-0 overflow-hidden">
-            {[...Array(20)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute rounded-full bg-white opacity-20"
-                style={{
-                  width: Math.random() * 10 + 2 + 'px',
-                  height: Math.random() * 10 + 2 + 'px',
-                  left: Math.random() * 100 + '%',
-                  top: Math.random() * 100 + '%',
-                }}
-                animate={{
-                  y: [0, -Math.random() * 100 - 50],
-                  opacity: [0.1, 0.3, 0]
-                }}
-                transition={{
-                  duration: Math.random() * 10 + 10,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
-              />
-            ))}
-          </div>
-          
-          <motion.div 
-            className="text-white text-center max-w-lg p-8 relative z-10 mx-auto flex flex-col items-center justify-center h-full"
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? 
-              { opacity: 1, y: 0, transition: { delay: 0.3, duration: 0.6 }} : 
-              { opacity: 0, y: 20 }
-            }
-          >
-            <h3 className="text-2xl md:text-3xl font-bold mb-4">
-              Spectacular Mountain Ranges
-            </h3>
-            <p className="mb-8 text-white/90 text-lg">
-              Explore the majesty of the Himalayas and other magnificent mountain
-              ranges across South Asia
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
-              <Button href="/tours" variant="primary" size="lg" rounded animate>
-                View Tours
-              </Button>
-              <Button href="/about" variant="outline" size="lg" rounded animate>
-                Learn More
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
 // Feature card for the homepage
 const FeatureCard = ({ icon, title, description }) => (
   <motion.div 
@@ -241,11 +163,6 @@ export default function Home() {
           <SafeHero />
         </ErrorBoundary>
 
-        {/* Mountain Showcase Section with animations */}
-        <ErrorBoundary fallback={<div className="py-20 text-center">Unable to display mountain showcase</div>}>
-          <MountainShowcase />
-        </ErrorBoundary>
-        
         {/* Features Section */}
         <AnimatedSection id="features" className="py-20 md:py-32 relative bg-gray-50 dark:bg-gray-900/50">
           <div className="container mx-auto px-4">

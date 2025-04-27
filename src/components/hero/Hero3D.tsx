@@ -381,12 +381,12 @@ function Scene() {
   return (
     <>
       {/* Background color that changes with day/night */}
-      <color attach="background" args={[skyColor.get()]} />
+      <color attach="background" args={[isNight ? "#0c1445" : "#64b5f6"]} />
 
       {/* Lighting */}
       <animated.ambientLight
         intensity={lightProps.intensity}
-        color={lightColor.get()}
+        color={isNight ? "#0c1445" : "#ffffff"}
       />
       <directionalLight position={[0, 10, -5]} intensity={1} castShadow />
 
@@ -529,7 +529,7 @@ export default function Hero3D() {
   try {
     return (
       <div className="w-full h-[95vh] relative">
-        {hasError || lowPerfMode ? (
+        {hasError ? (
           // Fallback UI if Canvas fails to render or device is low-powered
           <div className="w-full h-full bg-gradient-to-b from-emerald-800 to-emerald-600 flex items-center justify-center">
             <div className="text-center">
@@ -554,19 +554,18 @@ export default function Hero3D() {
             }
           >
             <Canvas
-              shadows={false} // Disable shadows for better performance
-              dpr={[0.8, 1.5]} // Limit pixel ratio for better performance
+              shadows
+              dpr={[1, 2]} // Improved pixel ratio for better visuals
               gl={{
-                antialias: false, // Disable antialias for performance
+                antialias: true, // Enable antialiasing for better visuals
                 powerPreference: "high-performance",
                 alpha: false,
-                precision: "lowp", // Lower precision for better performance
+                precision: "highp", // Higher precision for better visuals
                 depth: true,
                 stencil: false, // Disable stencil buffer if not needed
               }}
               onError={handleError}
-              frameloop="demand" // Only render when needed
-              performance={{ min: 0.5 }} // Allow quality reduction for performance
+              frameloop="always" // Always render the scene
             >
               <Scene />
             </Canvas>
@@ -574,7 +573,7 @@ export default function Hero3D() {
         )}
         <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-4 z-10">
           <a
-            href="#tours"
+            href="#features"
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3.5 rounded-md font-semibold text-base transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 inline-flex items-center"
           >
             Explore Tours

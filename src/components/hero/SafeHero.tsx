@@ -36,9 +36,10 @@ const FallbackHero = () => (
   </div>
 );
 
-// Custom loading component with progress indicator
+// Custom loading component with progress indicator and timeout
 const Loading = () => {
   const [progress, setProgress] = useState(0);
+  const [timeoutReached, setTimeoutReached] = useState(false);
   
   useEffect(() => {
     // Simulate loading progress
@@ -49,8 +50,20 @@ const Loading = () => {
       });
     }, 150);
     
-    return () => clearInterval(timer);
+    // Set a timeout to show fallback if loading takes too long (15 seconds)
+    const timeoutTimer = setTimeout(() => {
+      setTimeoutReached(true);
+    }, 15000);
+    
+    return () => {
+      clearInterval(timer);
+      clearTimeout(timeoutTimer);
+    };
   }, []);
+  
+  if (timeoutReached) {
+    return <FallbackHero />;
+  }
   
   return (
     <div className="w-full h-[95vh] flex flex-col items-center justify-center bg-gradient-to-b from-emerald-800 to-emerald-600">
@@ -62,6 +75,9 @@ const Loading = () => {
         />
       </div>
       <div className="text-white/70 text-sm mt-2">{Math.floor(progress)}%</div>
+      <p className="text-white/70 text-xs mt-6 max-w-md text-center">
+        First load may take a moment. If 3D doesn't appear, your device might not support WebGL or 3D rendering.
+      </p>
     </div>
   );
 };
@@ -76,60 +92,30 @@ const SystemDetector = ({ children }) => {
     
     // Check for system memory and performance capabilities
     const checkCapabilities = () => {
-      // Check for WebGL support
+      // Check for WebGL support - this is the only critical requirement
       try {
         const canvas = document.createElement('canvas');
         const hasWebGL = !!(window.WebGLRenderingContext && 
           (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')));
         
         if (!hasWebGL) {
+          console.log("WebGL not supported, falling back to static hero");
           setShouldShow3D(false);
           return;
         }
       } catch (e) {
+        console.log("Error checking WebGL support:", e);
         setShouldShow3D(false);
         return;
       }
       
-      // Check device memory if available
-      if ('deviceMemory' in navigator) {
-        const lowMemory = (navigator as any).deviceMemory < 4;
-        if (lowMemory) {
-          setShouldShow3D(false);
-          return;
-        }
-      }
-      
-      // Check for mobile/touch device (likely lower performance)
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      );
-      
-      // On mobile, check for hardware concurrency if available
-      if (isMobileDevice && 'hardwareConcurrency' in navigator) {
-        const lowCores = navigator.hardwareConcurrency < 4;
-        if (lowCores) {
-          setShouldShow3D(false);
-          return;
-        }
-      }
-      
-      // Check for reduced motion preference
+      // Skip other checks to allow more devices to experience 3D visuals
+      // Only disable for users who explicitly prefer reduced motion
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (prefersReducedMotion) {
+        console.log("User prefers reduced motion, using static hero");
         setShouldShow3D(false);
         return;
-      }
-      
-      // Consider battery status on mobile if available
-      if ('getBattery' in navigator) {
-        (navigator as any).getBattery().then(battery => {
-          if (battery.level < 0.2 && !battery.charging) {
-            setShouldShow3D(false);
-          }
-        }).catch(() => {
-          // Ignore errors with battery API
-        });
       }
     };
     
@@ -149,7 +135,9 @@ const SystemDetector = ({ children }) => {
 // Dynamically import the 3D Hero with no SSR to save memory
 const DynamicHero3D = dynamic(() => import("./Hero3D"), {
   ssr: false,
-  loading: () => <Loading />
+  loading: () => <Loading />,
+  // Force the Hero3D component to be properly loaded and initialize
+  suspense: false
 });
 
 // Memory-efficient wrapper for the 3D hero that gracefully falls back if needed
