@@ -9,10 +9,9 @@ import "./globals.css";
 import "react-toastify/dist/ReactToastify.css";
 
 export const metadata: Metadata = {
-  title: "Annapurna Tours and Travels",
-  description:
-    "Experience the beauty of the Himalayas with our exclusive tour packages",
-  keywords: "travel, tours, Annapurna, Himalayas, trekking, adventure, Nepal",
+  title: "South Asia Tours | Adventure Travel Specialists",
+  description: "Discover spectacular mountain adventures across South Asia with our expert guides. Book your next journey today!",
+  keywords: ["tours", "adventure", "South Asia", "travel", "Himalayas", "trekking", "mountains"],
 };
 
 export default function RootLayout({
@@ -21,13 +20,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="scroll-smooth">
       <head>
         <style dangerouslySetInnerHTML={{ __html: addFontStyles() }} />
       </head>
       <body className={`${fontClasses.body} antialiased`}>
+        {/* Skip to main content link for accessibility */}
+        <a href="#main-content" className="skip-to-content">
+          Skip to content
+        </a>
+        
         <AuthProvider>
-          {children}
+          <main id="main-content">
+            {children}
+          </main>
           <ToastContainer position="top-right" />
           <FirebaseNotice />
           <PexelsNotice />
