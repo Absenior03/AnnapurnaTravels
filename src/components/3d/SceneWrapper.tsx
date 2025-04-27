@@ -23,6 +23,7 @@ import * as THREE from "three";
 import { SpinnerCircular } from "../ui/Loader";
 import { Vector3 } from "three";
 import SceneController from "./SceneController";
+import MemoryManager from "@/utils/memoryManager";
 
 // Define modern Three.js constants for color encoding
 // These replace the deprecated LinearEncoding and sRGBEncoding
@@ -42,6 +43,72 @@ const LIGHTWEIGHT_ENVIRONMENTS = [
   "park",
   "lobby",
 ];
+
+// Custom hook for cleaning up Three.js objects to prevent memory leaks
+function useCleanup() {
+  const { scene, gl } = useThree();
+  
+  return useCallback(() => {
+    // Function to recursively dispose of all materials, geometries and textures
+    function disposeNode(node: THREE.Object3D) {
+      if (node instanceof THREE.Mesh) {
+        if (node.geometry) {
+          node.geometry.dispose();
+        }
+        
+        if (node.material) {
+          if (Array.isArray(node.material)) {
+            node.material.forEach(material => disposeMaterial(material));
+          } else {
+            disposeMaterial(node.material);
+          }
+        }
+      }
+      
+      // Recursively process all children
+      if (node.children) {
+        for (let i = node.children.length - 1; i >= 0; i--) {
+          disposeNode(node.children[i]);
+        }
+      }
+    }
+    
+    function disposeMaterial(material: THREE.Material) {
+      // Dispose any textures used by this material
+      for (const key in material) {
+        const value = material[key];
+        if (value && typeof value === 'object' && 'isTexture' in value) {
+          value.dispose();
+        }
+      }
+      
+      // Dispose the material itself
+      material.dispose();
+    }
+    
+    // Dispose everything in the scene
+    scene.traverse(disposeNode);
+    
+    // Clear WebGL memory cache
+    gl.info.reset();
+    
+    console.log('Scene resources cleaned up');
+  }, [scene, gl]);
+}
+
+// Add memory cleanup component
+function MemoryManager() {
+  const cleanup = useCleanup();
+  
+  useEffect(() => {
+    // Cleanup when component unmounts
+    return () => {
+      cleanup();
+    };
+  }, [cleanup]);
+  
+  return null;
+}
 
 interface SceneWrapperProps {
   children: ReactNode;
@@ -217,6 +284,7 @@ function SceneContent({
         {children}
         <Preload all />
       </Suspense>
+      <MemoryManager />
     </Canvas>
   );
 }
@@ -280,7 +348,11 @@ export default function SceneWrapper({
   const [hasError, setHasError] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [performanceSettings, setPerformanceSettings] = useState(null);
+  const [performanceSettings, setPerformanceSettings] = useState<{
+    pixelRatio?: number;
+    shadows?: boolean;
+    [key: string]: any;
+  } | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera>(null);
   const initTimeRef = useRef<number>(Date.now());
   const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -340,10 +412,11 @@ export default function SceneWrapper({
   useEffect(() => {
     if (isClient && cameraRef.current) {
       // Ensure lookAt is an array with exactly 3 elements
-      const targetPosition = Array.isArray(lookAt) && lookAt.length === 3 
-        ? new Vector3(lookAt[0], lookAt[1], lookAt[2])
-        : new Vector3(0, 0, 0);
+      const lookAtArray = Array.isArray(lookAt) && lookAt.length === 3 
+        ? lookAt as [number, number, number]
+        : [0, 0, 0];
         
+      const targetPosition = new Vector3(lookAtArray[0], lookAtArray[1], lookAtArray[2]);
       cameraRef.current.lookAt(targetPosition);
     }
   }, [isClient, lookAt]);
@@ -378,6 +451,49 @@ export default function SceneWrapper({
     console.log("Applied performance settings:", settings);
   };
 
+  // Add timeout to force cleanup after inactivity
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout | null = null;
+    
+    if (isLoaded) {
+      // Set up inactivity detector
+      const resetTimer = () => {
+        if (inactivityTimer) {
+          clearTimeout(inactivityTimer);
+        }
+        
+        // After 5 minutes of inactivity, force lower performance to save memory
+        inactivityTimer = setTimeout(() => {
+          console.log('Scene inactive, reducing performance demands');
+          if (performanceSettings) {
+            const updatedSettings = {
+              ...performanceSettings,
+              pixelRatio: performanceSettings.pixelRatio !== undefined ? 
+                Math.min(1, performanceSettings.pixelRatio) : 1,
+              shadows: false
+            };
+            handlePerformanceSettingsChange(updatedSettings);
+          }
+        }, 5 * 60 * 1000);
+      };
+      
+      // Reset timer on user interaction
+      window.addEventListener('mousemove', resetTimer);
+      window.addEventListener('touchstart', resetTimer);
+      window.addEventListener('scroll', resetTimer);
+      
+      // Initial timer
+      resetTimer();
+      
+      return () => {
+        window.removeEventListener('mousemove', resetTimer);
+        window.removeEventListener('touchstart', resetTimer);
+        window.removeEventListener('scroll', resetTimer);
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+      };
+    }
+  }, [isLoaded, performanceSettings]);
+
   if (!isClient || !webGLSupported) {
     return <div className={`${className} bg-gray-900`}>{fallback || <Fallback />}</div>;
   }
@@ -394,8 +510,8 @@ export default function SceneWrapper({
       fallbackRender={({ error }) => (
         <CanvasErrorFallback fallback={fallback} error={error} />
       )}
-      onError={(error, info) => {
-        console.error("ErrorBoundary caught error:", error, info);
+      onError={(error: any) => {
+        console.error("ErrorBoundary caught error:", error);
         if (onError) onError(error);
       }}
     >

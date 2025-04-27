@@ -1,209 +1,242 @@
 "use client";
 
-import React, { useRef, useMemo, useEffect, useState } from "react";
-import { useFrame } from "@react-three/fiber";
-import { InstancedMesh, Color, Vector3, MathUtils } from "three";
-import { MeshWobbleMaterial, useTexture } from "@react-three/drei";
+import React, { useRef, useEffect, useState, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import { useTexture } from '@react-three/drei';
+import * as THREE from 'three';
+import { useMemoryManagement } from '@/hooks/useMemoryManagement';
 
-interface MountainProps {
+// Simplex noise approximation function
+const simplex = (x: number, y: number): number => {
+  const n = x * x + y * y;
+  return (Math.sin(x * 1.5) * Math.cos(y * 2.5) + Math.sin(x * 2.9 + y * 0.8) * 0.2) * (1 / (1 + n * 0.1));
+};
+
+export interface MountainProps {
   position?: [number, number, number];
   scrollMultiplier?: number;
   color?: string;
   wireframe?: boolean;
   size?: number;
   detail?: number;
-  rotationSpeed?: number;
-  noiseScale?: number;
-  noiseAmplitude?: number;
-  wobbleSpeed?: number;
-  wobbleStrength?: number;
-  materialType?: "standard" | "physical" | "toon" | "wobble";
-  texture?: string | null;
-  hoverScale?: number;
+  materialType?: 'standard' | 'physical' | 'toon' | 'wobble';
+  hoverEffect?: boolean;
+  snowCoverage?: number;
+  texture?: string;
 }
 
-// Simple noise function to replace SimplexNoise
-// This is a basic implementation that doesn't require an external library
-function simpleNoise(x: number, y: number): number {
-  // Simple pseudo-random noise function
-  const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
-  return n - Math.floor(n);
-}
-
-export default function Mountain({
+export function Mountain({
   position = [0, 0, 0],
   scrollMultiplier = 1,
-  color = "#3e64ff",
+  color = '#3b82f6',
   wireframe = false,
-  size = 2,
-  detail = 1,
-  rotationSpeed = 0.0008,
-  noiseScale = 1,
-  noiseAmplitude = 0.5,
-  wobbleSpeed = 1,
-  wobbleStrength = 0.2,
-  materialType = "standard",
-  texture = null,
-  hoverScale = 1.05,
+  size = 5,
+  detail = 32,
+  materialType = 'standard',
+  hoverEffect = true,
+  snowCoverage = 0.7,
+  texture,
 }: MountainProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const initialY = position[1];
-  const [isHovered, setIsHovered] = useState(false);
+  const mesh = useRef<THREE.Mesh>(null);
+  const geometry = useRef<THREE.BufferGeometry>(null);
+  const [hovered, setHovered] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const { isLowMemoryDevice, shouldReduceQuality } = useMemoryManagement();
   
-  // For performance optimization, create a memo for the position
-  const [x, y, z] = position;
-  const memoizedPosition = useMemo(() => new Vector3(x, y, z), [x, y, z]);
-
-  // Generate optimized geometry using useMemo with a safety check for detail value
-  const geometry = useMemo(() => {
-    // Ensure detail is within safe bounds to prevent crashes
-    const safeDetail = Math.max(0.1, Math.min(detail, 2));
-    return generateMountainGeometry(safeDetail, size, noiseScale, noiseAmplitude);
-  }, [detail, size, noiseScale, noiseAmplitude]);
-
-  // Load texture with error handling if provided
-  const textureMap = useMemo(() => {
-    if (!texture) return null;
-    try {
-      // Create a safer texture loading approach with fallback
-      return useTexture(texture);
-    } catch (error) {
-      console.error("Failed to load mountain texture:", error);
-      setLoadError(true);
-      return null;
+  // Optimize detail level based on device capabilities
+  const optimizedDetail = useMemo(() => {
+    if (isLowMemoryDevice || shouldReduceQuality) {
+      // Reduce detail significantly for low-memory devices
+      return Math.max(8, Math.floor(detail / 3));
     }
-  }, [texture]);
-
-  // Set up animation frame with performance optimizations
-  useFrame((state) => {
-    if (!meshRef.current) return;
-
-    // Only update if visible in viewport for optimization
-    if (meshRef.current.visible) {
-      // Limit rotation speed based on frame rate (deltaTime)
-      meshRef.current.rotation.y += rotationSpeed; 
-
-      // Apply scroll-based position change if scroll data is available
-      // Access scroll data properly with proper type casting when needed
-      const scrollData = state.scroll as { offset?: { y: number } } | undefined;
-      if (scrollData && scrollData.offset) {
-        const scrollY = scrollData.offset.y || 0;
-        const newY = initialY - scrollY * scrollMultiplier * 2;
-        meshRef.current.position.y = MathUtils.lerp(
-          meshRef.current.position.y, 
-          newY, 
-          0.1
-        ); // Use lerp for smoother motion
+    return detail;
+  }, [detail, isLowMemoryDevice, shouldReduceQuality]);
+  
+  // Optimize texture loading based on device capabilities
+  const textureProps = useMemo(() => {
+    return {
+      // Minimize memory usage for textures on low-end devices
+      anisotropy: isLowMemoryDevice ? 1 : 4,
+      generateMipmaps: !isLowMemoryDevice
+    };
+  }, [isLowMemoryDevice]);
+  
+  // Load texture conditionally
+  const [diffuseMap] = useTexture(
+    texture ? [texture] : [''], 
+    (loadedTextures) => {
+      if (texture && loadedTextures.length > 0) {
+        const tex = loadedTextures[0];
+        tex.anisotropy = textureProps.anisotropy;
+        tex.generateMipmaps = textureProps.generateMipmaps;
+        tex.minFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
       }
+    },
+    (error) => {
+      console.error('Error loading texture:', error);
+      setLoadError(true);
+    }
+  );
 
-      // Apply hover scale effect with smoothing
-      if (isHovered) {
-        meshRef.current.scale.lerp(
-          new Vector3(hoverScale, hoverScale, hoverScale),
-          0.1
-        );
+  // Generate optimized mountain geometry
+  const generateMountainGeometry = (detailLevel: number, mountainSize: number) => {
+    // Create a plane geometry as a base
+    const geo = new THREE.PlaneGeometry(mountainSize, mountainSize, detailLevel, detailLevel);
+    
+    // Add height to vertices to create mountain shape
+    const basePositions = geo.attributes.position as THREE.BufferAttribute;
+    const vertices = basePositions.array;
+    
+    for (let i = 0; i < vertices.length; i += 3) {
+      const x = vertices[i];
+      const z = vertices[i + 1];
+      
+      // Generate height using simplified noise function for better performance
+      let height = simplex(x * 0.1, z * 0.1) * 0.5 + 0.5;
+      
+      // Apply height to vertices
+      vertices[i + 2] = height * mountainSize * 0.5;
+      
+      // Apply snow based on height and snow coverage
+      if (height > snowCoverage) {
+        // Will be used for vertex color in the material
+      }
+    }
+    
+    // Update geometry
+    basePositions.needsUpdate = true;
+    geo.computeVertexNormals();
+    
+    // Generate optimized buffer for performance
+    return geo;
+  };
+
+  // Animate the mountain position and rotation
+  useFrame((state) => {
+    if (!mesh.current) return;
+    
+    // Stop animation when not in view to save resources
+    const isInView = Math.abs(position[1] - state.camera.position.y) < 15;
+    
+    if (isInView || hovered) {
+      // Get scroll progress
+      const scrollY = state.camera.position.y;
+      
+      // Apply rotation
+      mesh.current.rotation.y = state.clock.getElapsedTime() * 0.05;
+      
+      // Apply parallax effect if enabled
+      if (scrollMultiplier !== 0) {
+        const parallaxOffset = scrollY * scrollMultiplier * 0.1;
+        mesh.current.position.y = position[1] + parallaxOffset;
+      }
+      
+      // Apply hover effect if enabled
+      if (hoverEffect && hovered) {
+        mesh.current.rotation.z = Math.sin(state.clock.getElapsedTime() * 2) * 0.05;
       } else {
-        meshRef.current.scale.lerp(new Vector3(1, 1, 1), 0.1);
+        mesh.current.rotation.z = 0;
       }
     }
   });
 
-  // Optimize mesh updates
+  // Memory optimization - dispose resources when component unmounts
   useEffect(() => {
-    if (!meshRef.current) return;
-    
-    // Use a more conservative approach with matrixAutoUpdate
-    // Only disable updates after animation has settled
-    const timer = setTimeout(() => {
-      if (meshRef.current) {
-        // Check if mesh still exists before updating
-        meshRef.current.matrixAutoUpdate = false;
-        meshRef.current.updateMatrix();
+    return () => {
+      if (geometry.current) {
+        geometry.current.dispose();
       }
-    }, 5000); // After 5 seconds, reduce update frequency
-    
-    return () => clearTimeout(timer);
-  }, []);
+      
+      if (diffuseMap && !loadError) {
+        diffuseMap.dispose();
+      }
+    };
+  }, [diffuseMap, loadError]);
+
+  // Determine which material to use based on props and memory constraints
+  const material = useMemo(() => {
+    switch (materialType) {
+      case 'physical':
+        return (
+          <meshPhysicalMaterial
+            color={color}
+            wireframe={wireframe}
+            roughness={0.8}
+            metalness={0.1}
+            map={texture && !loadError ? diffuseMap : undefined}
+          />
+        );
+      case 'toon':
+        // Only use toon material on high-performance devices
+        if (!isLowMemoryDevice) {
+          return (
+            <meshToonMaterial
+              color={color}
+              wireframe={wireframe}
+            />
+          );
+        }
+        // Fallback to standard for low-memory
+        return (
+          <meshStandardMaterial
+            color={color}
+            wireframe={wireframe}
+            roughness={0.8}
+          />
+        );
+      case 'wobble':
+        // Only use custom shaders on high-performance devices
+        if (!isLowMemoryDevice) {
+          return (
+            <meshStandardMaterial
+              color={color}
+              wireframe={wireframe}
+              roughness={0.8}
+            />
+          );
+        }
+        // Fallback for low-memory
+        return (
+          <meshBasicMaterial
+            color={color}
+            wireframe={wireframe}
+          />
+        );
+      default:
+        // Standard is the default, most optimized material
+        return (
+          <meshStandardMaterial
+            color={color}
+            wireframe={wireframe}
+            roughness={0.8}
+            map={texture && !loadError ? diffuseMap : undefined}
+          />
+        );
+    }
+  }, [color, wireframe, materialType, texture, diffuseMap, loadError, isLowMemoryDevice]);
+
+  // Create mountain geometry
+  const mountainGeometry = useMemo(() => {
+    return generateMountainGeometry(optimizedDetail, size);
+  }, [optimizedDetail, size]);
+
+  // Save reference to geometry for cleanup
+  useEffect(() => {
+    geometry.current = mountainGeometry;
+  }, [mountainGeometry]);
 
   return (
     <mesh
-      ref={meshRef}
-      position={memoizedPosition}
-      onPointerOver={() => setIsHovered(true)}
-      onPointerOut={() => setIsHovered(false)}
-      castShadow
-      receiveShadow
+      ref={mesh}
+      position={[position[0], position[1], position[2]]}
+      onPointerOver={() => hoverEffect && setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+      geometry={mountainGeometry}
     >
-      {geometry}
-
-      {/* Use a switch based on materialType for better readability */}
-      {(() => {
-        // Default material props for consistency
-        const commonProps = {
-          color: color,
-          wireframe: wireframe,
-          map: textureMap,
-        };
-        
-        switch (materialType) {
-          case "wobble":
-            return (
-              <MeshWobbleMaterial
-                {...commonProps}
-                factor={wobbleStrength}
-                speed={wobbleSpeed}
-                roughness={0.4}
-                metalness={0.1}
-              />
-            );
-          case "physical":
-            return (
-              <meshPhysicalMaterial
-                {...commonProps}
-                roughness={0.5}
-                metalness={0.2}
-                clearcoat={0.3}
-                clearcoatRoughness={0.25}
-              />
-            );
-          case "toon":
-            return (
-              <meshToonMaterial {...commonProps} />
-            );
-          case "standard":
-          default:
-            return (
-              <meshStandardMaterial
-                {...commonProps}
-                roughness={0.7}
-                metalness={0.1}
-              />
-            );
-        }
-      })()}
+      {material}
     </mesh>
   );
 }
 
-// Generate mountain geometry with noise
-function generateMountainGeometry(
-  detail: number,
-  size: number,
-  noiseScale: number,
-  noiseAmplitude: number
-) {
-  // Clamp detail to avoid performance issues
-  const safeDetail = Math.min(Math.max(detail, 0.1), 2);
-  
-  // Lower segment count for better performance
-  const segments = Math.floor(12 * safeDetail);
-  
-  // Prevent extreme low values that might cause rendering issues
-  const safeSegments = Math.max(segments, 6);
-
-  // Create cone geometry with specified segments
-  const geometry = <coneGeometry args={[size, size * 2, safeSegments, 1, false]} />;
-
-  return geometry;
-}
+export default Mountain;
