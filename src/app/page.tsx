@@ -120,9 +120,14 @@ const MountainShowcaseFallback = () => (
             Explore the majesty of the Himalayas and other magnificent mountain
             ranges across South Asia
           </p>
-          <Button href="/tours" variant="primary" size="lg" rounded>
-            View Tours
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button href="/tours" variant="primary" size="lg" rounded>
+              View Tours
+            </Button>
+            <Button href="/about" variant="outline" size="lg" rounded>
+              Learn More
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -216,7 +221,7 @@ function SafeThreeDComponent({
         }}
       >
         <Suspense fallback={<LoadingScreen />}>
-          <Component fallbackImage="/images/mountains-fallback.jpg" />
+          <Component />
         </Suspense>
       </ErrorBoundary>
     );
@@ -372,17 +377,7 @@ export default function Home() {
 
           {/* Mountain Showcase Section */}
           <section id="mountains" className="py-20 md:py-32 relative">
-            <ErrorBoundary fallback={<MountainShowcaseFallback />}>
-              {show3D ? (
-                <div className="hidden md:block">
-                  <Suspense fallback={<MountainShowcaseFallback />}>
-                    <SafeThreeDComponent component={MountainShowcase} />
-                  </Suspense>
-                </div>
-              ) : (
-                <MountainShowcaseFallback />
-              )}
-            </ErrorBoundary>
+            <MountainShowcaseFallback />
           </section>
 
           {/* Tours Section */}

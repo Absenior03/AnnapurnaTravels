@@ -5,9 +5,9 @@ import { useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGLTF } from "@react-three/drei";
 
-// Preload common 3D models to avoid loading stutter
-useGLTF.preload("/models/mountain.glb");
-useGLTF.preload("/models/compass.glb");
+// Remove preloads that could cause errors if files don't exist
+// useGLTF.preload("/models/mountain.glb");
+// useGLTF.preload("/models/compass.glb");
 
 // Define modern Three.js constants for color encoding
 // These replace the deprecated LinearEncoding and sRGBEncoding

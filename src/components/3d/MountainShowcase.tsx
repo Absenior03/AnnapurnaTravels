@@ -231,14 +231,7 @@ export default function MountainShowcase() {
   // Fallback image display when 3D is not supported or loading is slow
   const FallbackDisplay = () => (
     <div className="relative w-full h-[50vh] md:h-[60vh] overflow-hidden rounded-xl">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/70 to-indigo-900/80 z-10" />
-      <Image
-        src="/images/mountain-backdrop.jpg"
-        alt="South Asian Mountain Range"
-        fill
-        className="object-cover"
-        priority
-      />
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-950 to-indigo-900 z-0" />
       <div className="absolute inset-0 flex flex-col items-center justify-center text-white z-20 p-6 text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
